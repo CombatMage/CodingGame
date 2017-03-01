@@ -14,13 +14,14 @@ ENEMY = -1
 
 class Factory:
     """cyborg producing factory"""
+    entity_id = -1
     ownership = NEUTRAL
     number_of_cyborgs = 0
     production = 0
 
     def __str__(self):
-        return "Factory(ownership: {}, number_of_cyborgs: {}, production:{})".format(
-            self.ownership, self.number_of_cyborgs, self.ownership)
+        return "Factory(entity_id: {}, ownership: {}, number_of_cyborgs: {}, production:{})".format(
+            self.entity_id, self.ownership, self.number_of_cyborgs, self.ownership)
 
     def __repr__(self):
         return str(self)
@@ -36,7 +37,11 @@ class FactoryNetwork:
         factory_count = int(input())
         link_count = int(input())  # the number of links between factories
         print("__init__({}, {})".format(factory_count, link_count), file=sys.stderr)
-        self.factories = [Factory] * factory_count
+
+        self.factories = [None] * factory_count
+        for i in range(factory_count):
+            self.factories[i] = Factory()
+            self.factories[i].entity_id = i
         for _ in range(link_count):
             factory_1, factory_2, distance = [int(j) for j in input().split()]
             self.add_link(factory_1, factory_2, distance)
@@ -67,17 +72,69 @@ def read_game_status(factory_network):
         arg_4 = int(arg_4)
         arg_5 = int(arg_5)
 
-        if entity_type is ENTITY_FACTORY:
+        if entity_type == ENTITY_FACTORY:
             factory = factory_network.factories[entity_id]
             factory.ownership = arg_1
             factory.number_of_cyborgs = arg_2
             factory.production = arg_3
 
 
+def get_factory_for_attack(factory_network):
+    """returns the factory from which to send troops
+    Rules:
+    Factory.ownership == self
+    Factory.number_of_cyborgs > 20
+    """
+    possible_attacker = []
+    for factory in factory_network.factories:
+        print("factory to evaluate: " + str(factory), file=sys.stderr)
+        if factory.ownership == SELF and factory.number_of_cyborgs > 20:
+            possible_attacker.append(factory)
+
+    print("possible attackers: " + str(possible_attacker), file=sys.stderr)
+    if possible_attacker:
+        return max(possible_attacker, key=lambda x: x.number_of_cyborgs)
+    return None
+
+
+def get_factory_to_attack(factory_network, attacking_factory):
+    """returns the factory to attacking_factory
+    Rules:
+    Factory.ownership != self
+    Factory.number_of_cyborgs + (Factory.production * travel_time)
+        < attacking_factory.number_of_cyborgs / 2
+    """
+    possible_targets = []
+    neighbors = factory_network.neighbors[attacking_factory.entity_id]
+    for factory_id, travel_time in neighbors:
+        factory = factory_network.factories[factory_id]
+        if factory.ownership == SELF:
+            continue
+        defenders = factory.number_of_cyborgs + factory.production * travel_time
+        if defenders < attacking_factory.number_of_cyborgs / 2:
+            possible_targets.append((factory, defenders))
+
+    if possible_targets:
+        return min(possible_targets, key=lambda factory_defenders: factory_defenders[1])[0]
+    return None
+
+
 FACTORY_NETWORK = FactoryNetwork()
 print(str(FACTORY_NETWORK), file=sys.stderr)
 
-while True:
+def game_turn():
+    """single gameturn"""
     read_game_status(FACTORY_NETWORK)
-
+    attacker = get_factory_for_attack(FACTORY_NETWORK)
+    print("possible attacker: " + str(attacker), file=sys.stderr)
+    if attacker:
+        target = get_factory_to_attack(FACTORY_NETWORK, attacker)
+        print("possible target: " + str(target), file=sys.stderr)
+        if target:
+            print("MOVE {} {} {}".format(
+                attacker.entity_id, target.entity_id, int(attacker.number_of_cyborgs / 2)))
+            return
     print("WAIT")
+
+while True:
+    game_turn()
