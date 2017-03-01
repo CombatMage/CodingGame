@@ -1,0 +1,16 @@
+6         
+0 1500    
+1000 2000
+2000 500
+3500 500
+5000 1500
+6999 1000
+
+###############################################
+6         	(surfaceN) Surface made of 6 points
+0 1500      	(landX landY)
+1000 2000	(landX landY)
+2000 500	(landX landY) Start of flat ground
+3500 500	(landX landY) End of flat ground
+5000 1500	(landX landY)
+6999 1000	(landX landY)

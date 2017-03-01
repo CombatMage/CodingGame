@@ -1,0 +1,9 @@
+5000 2500 -50 0 1000 90 0
+
+
+
+############################ input
+5000 2500 -50 0 1000 90 0	(X Y hSpeed vSpeed fuel rotate power)
+############################ output
+-45 4 (rotate power)
+Requested rotation to the right, maximum thrust power
