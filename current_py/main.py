@@ -12,6 +12,24 @@ SELF = 1
 NEUTRAL = 0
 ENEMY = -1
 
+class Trooper:
+    """Cyborgs ready for battle"""
+    entity_id = -1
+    ownership = NEUTRAL
+    src_id = -1
+    dst_id = -1
+    count = 0
+    time_till_arival = -1
+
+    def __init__(self, entity_id, ownership, src_id, dst_id, count, time_till_arival):
+        self.entity_id = entity_id
+        self.ownership = ownership
+        self.src_id = src_id
+        self.dst_id = dst_id
+        self.count = count
+        self.time_till_arival = time_till_arival
+
+
 class Factory:
     """cyborg producing factory"""
     entity_id = -1
@@ -60,9 +78,10 @@ class FactoryNetwork:
     def __str__(self):
         return "FactoryNetwork(factories: {}, neighbors: {})".format(self.factories, self.neighbors)
 
-def read_game_status(factory_network):
+def read_game_status(factory_network, troops):
     """reading current game status from stdin"""
     entity_count = int(input())  # the number of entities (e.g. factories and troops)
+    troops.clear()
     for _ in range(entity_count):
         entity_id, entity_type, arg_1, arg_2, arg_3, arg_4, arg_5 = input().split()
         entity_id = int(entity_id)
@@ -71,12 +90,14 @@ def read_game_status(factory_network):
         arg_3 = int(arg_3)
         arg_4 = int(arg_4)
         arg_5 = int(arg_5)
-
         if entity_type == ENTITY_FACTORY:
             factory = factory_network.factories[entity_id]
             factory.ownership = arg_1
             factory.number_of_cyborgs = arg_2
             factory.production = arg_3
+        elif entity_type == ENTITY_TROOP:
+            trooper = Trooper(entity_id, arg_1, arg_2, arg_3, arg_4, arg_5)
+            troops[entity_id] = trooper
 
 
 def calc_attack_move(factory_network):
@@ -167,12 +188,13 @@ def calc_preparation_move(factory_network):
     return None
 
 
+TROOPS = {}
 FACTORY_NETWORK = FactoryNetwork()
 print(str(FACTORY_NETWORK), file=sys.stderr)
 
 def game_turn():
     """single gameturn"""
-    read_game_status(FACTORY_NETWORK)
+    read_game_status(FACTORY_NETWORK, TROOPS)
     attack_move = calc_attack_move(FACTORY_NETWORK)
     if attack_move:
         print(attack_move, file=sys.stderr)
