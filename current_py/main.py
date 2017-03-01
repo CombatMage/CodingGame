@@ -79,6 +79,19 @@ def read_game_status(factory_network):
             factory.production = arg_3
 
 
+def calc_attack_move(factory_network):
+    """Calculate if we can attack"""
+    attacker = get_factory_for_attack(factory_network)
+    print("possible attacker: " + str(attacker), file=sys.stderr)
+    if attacker:
+        target = get_factory_to_attack(factory_network, attacker)
+        print("possible target: " + str(target), file=sys.stderr)
+        if target:
+            return "MOVE {} {} {}".format(
+                attacker.entity_id, target.entity_id, int(attacker.number_of_cyborgs / 2))
+    return None
+
+
 def get_factory_for_attack(factory_network):
     """returns the factory from which to send troops
     Rules:
@@ -119,21 +132,41 @@ def get_factory_to_attack(factory_network, attacking_factory):
     return None
 
 
+def calc_preparation_move(factory_network):
+    """if we do not attack, we are concentrating our troops"""
+
+    my_factories = filter(
+        lambda factory: factory.ownership == SELF,
+        factory_network.factories)
+    sorted_factories = sorted(
+        my_factories,
+        key=lambda factory: factory.number_of_cyborgs,
+        reverse=True)
+
+    if len(sorted_factories) >= 2:
+        return "MOVE {} {} {}".format(
+            sorted_factories[1].entity_id,
+            sorted_factories[0].entity_id,
+            int(sorted_factories[1].number_of_cyborgs))
+    return None
+
+
 FACTORY_NETWORK = FactoryNetwork()
 print(str(FACTORY_NETWORK), file=sys.stderr)
 
 def game_turn():
     """single gameturn"""
     read_game_status(FACTORY_NETWORK)
-    attacker = get_factory_for_attack(FACTORY_NETWORK)
-    print("possible attacker: " + str(attacker), file=sys.stderr)
-    if attacker:
-        target = get_factory_to_attack(FACTORY_NETWORK, attacker)
-        print("possible target: " + str(target), file=sys.stderr)
-        if target:
-            print("MOVE {} {} {}".format(
-                attacker.entity_id, target.entity_id, int(attacker.number_of_cyborgs / 2)))
-            return
+    attack_move = calc_attack_move(FACTORY_NETWORK)
+    if attack_move:
+        print(attack_move, file=sys.stderr)
+        print(attack_move)
+        return
+    prepare_move = calc_preparation_move(FACTORY_NETWORK)
+    if prepare_move:
+        print(prepare_move, file=sys.stderr)
+        print(prepare_move)
+        return
     print("WAIT")
 
 while True:
