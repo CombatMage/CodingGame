@@ -96,12 +96,10 @@ def get_factory_for_attack(factory_network):
     """returns the factory from which to send troops
     Rules:
     Factory.ownership == self
-    Factory.number_of_cyborgs > 20
     """
     possible_attacker = []
     for factory in factory_network.factories:
-        print("factory to evaluate: " + str(factory), file=sys.stderr)
-        if factory.ownership == SELF and factory.number_of_cyborgs > 20:
+        if factory.ownership == SELF:
             possible_attacker.append(factory)
 
     print("possible attackers: " + str(possible_attacker), file=sys.stderr)
@@ -125,11 +123,27 @@ def get_factory_to_attack(factory_network, attacking_factory):
             continue
         defenders = factory.number_of_cyborgs + factory.production * travel_time
         if defenders < attacking_factory.number_of_cyborgs / 2:
-            possible_targets.append((factory, defenders))
+            possible_targets.append((factory, defenders, travel_time))
 
     if possible_targets:
-        return min(possible_targets, key=lambda factory_defenders: factory_defenders[1])[0]
+        return max(
+            possible_targets,
+            key=lambda x: calc_value_of_target(x[0], x[1], x[2])
+        )[0]
     return None
+
+
+def calc_value_of_target(factory, defenders, travel_time):
+    """calculate the value of a target
+    Rules:
+    1. Production is most important
+    2. Number of defenders
+    3. travel_time
+    """
+    value = 4 * factory.production
+    value -= defenders
+    value -= travel_time
+    return value
 
 
 def calc_preparation_move(factory_network):
@@ -144,9 +158,11 @@ def calc_preparation_move(factory_network):
         reverse=True)
 
     if len(sorted_factories) >= 2:
+        most_troops = sorted_factories[0]
+
         return "MOVE {} {} {}".format(
             sorted_factories[1].entity_id,
-            sorted_factories[0].entity_id,
+            most_troops.entity_id,
             int(sorted_factories[1].number_of_cyborgs))
     return None
 
