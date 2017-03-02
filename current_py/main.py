@@ -60,6 +60,12 @@ class Factory:
     number_of_cyborgs = 0
     production = 0
 
+    def get_dispatched_troops(self, troops, ownership):
+        """check wether troops are dispatched to this factory
+        return number of dispatched troops
+        """
+        pass
+
     def __str__(self):
         return "Factory(entity_id: {}, ownership: {}, number_of_cyborgs: {}, production:{})".format(
             self.entity_id, self.ownership, self.number_of_cyborgs, self.ownership)
@@ -276,15 +282,24 @@ def calc_defend_move(factory_network):
         factory_network.my_factories(),
         key=lambda factory: factory.production,
         reverse=True)
-    remaining_defensive_manouvers = 3 if len(my_factories) > 3 else 1
-    move_to = my_factories[0:remaining_defensive_manouvers]
-    take_from = my_factories[remaining_defensive_manouvers:]
+    count_defensive_moves = 3 if len(my_factories) > 3 else 1
+    move_to = my_factories[0:count_defensive_moves]
+    take_from = my_factories[count_defensive_moves:]
+
+    troops_available = 0
+    for factory in take_from:
+        troops_available += factory.number_of_cyborgs
+
+    troops_per_factory = int(troops_available / len(move_to))
+    troops_per_factory_dispatch = [troops_per_factory] * len(move_to)
     index = 0
     for factory in take_from:
-        if index >= len(move_to): # simple wrap around
-            index = 0
+        available_troops = factory.number_of_cyborgs
         dst = move_to[index]
-        defensive_moves.append(format_move(factory, dst, factory.number_of_cyborgs))
+        defensive_moves.append(format_move(factory, dst, available_troops))
+        troops_per_factory_dispatch[index] -= available_troops
+        if troops_per_factory_dispatch[index] < 0:
+            index += 1
     return defensive_moves
 
 
@@ -310,8 +325,9 @@ FACTORY_NETWORK = FactoryNetwork()
 print(str(FACTORY_NETWORK), file=sys.stderr)
 
 
-def game_turn():
+def game_turn(turn):
     """single gameturn"""
+    print("reading status for turn " + str(turn), file=sys.stderr)
     read_game_status(FACTORY_NETWORK, TROOPS, BOMBS)
 
     my_bombs_in_play = list(filter(lambda x: x.ownership == SELF, BOMBS))
@@ -339,26 +355,34 @@ def game_turn():
                 print(format_move(src, target, src.number_of_cyborgs))
                 return
 
+    print("reached", file=sys.stderr)
+
+    all_moves = []
     attack_move = calc_attack_move(FACTORY_NETWORK)
     if attack_move:
-        print(attack_move, file=sys.stderr)
-        print(attack_move)
-        return
+        all_moves.append(attack_move)
+    #     print(attack_move, file=sys.stderr)
+    #     print(attack_move)
+    #     return
 
     defensive_moves = calc_defend_move(FACTORY_NETWORK)
     if defensive_moves:
-        print(str(defensive_moves), file=sys.stderr)
+        all_moves.append(defensive_moves)
+    #     print(str(defensive_moves), file=sys.stderr)
+    #     print(";".join(defensive_moves))
+    #     return
+    print("all available moves " + str(all_moves), file=sys.stderr)
+    if all_moves:
         print(";".join(defensive_moves))
-        return
-
-    print("WAIT")
+    else:
+        print("WAIT")
 
 
 def game_loop():
     """play game till victory or death"""
     turn_count = 0
     while True:
-        game_turn()
+        game_turn(turn_count)
         turn_count += 1
 
 game_loop()
