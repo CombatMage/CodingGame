@@ -6,10 +6,34 @@ import sys
 
 ENTITY_FACTORY = "FACTORY"
 ENTITY_TROOP = "TROOP"
+ENTITY_BOMB = "BOMB"
 
 SELF = 1
 NEUTRAL = 0
 ENEMY = -1
+
+class Bomb:
+    """deployed bombs"""
+    entity_id = -1
+    ownership = NEUTRAL
+    src_id = -1
+    dst_id = -1
+    time_till_arival = -1
+
+    def __init__(self, entity_id, ownership, src_id, dst_id, time_till_arival):
+        self.entity_id = entity_id
+        self.ownership = ownership
+        self.src_id = src_id
+        self.dst_id = dst_id
+        self.time_till_arival = time_till_arival
+
+    def __str__(self):
+        return "Bomb(entity_id: {}, ownership: {}, src: {}, dst: {}, tta: {})".format(
+            self.entity_id, self.ownership, self.src_id, self.dst_id, self.time_till_arival)
+
+    def __repr__(self):
+        return str(self)
+
 
 class Trooper:
     """Cyborgs ready for battle"""
@@ -83,7 +107,32 @@ class FactoryNetwork:
 
     def my_factories(self):
         """return factories with ownership self"""
-        return filter(lambda factory: factory.ownership == SELF, self.factories)
+        return list(filter(lambda factory: factory.ownership == SELF, self.factories))
+
+    def enemy_factories(self):
+        """return factories with ownership enemy"""
+        return list(filter(lambda factory: factory.ownership == ENEMY, self.factories))
+
+    def neutral_factories(self):
+        """return factory with ownership enemy and most troops"""
+        return list(filter(lambda factory: factory.ownership == NEUTRAL, self.factories))
+
+    def enemy_factories_most_troops(self):
+        """return factories with ownership enemy"""
+        return sorted(
+            self.enemy_factories(),
+            key=lambda x: x.number_of_cyborgs,
+            reverse=True)
+
+    def get_nearest_factory(self, target, ownership):
+        """get nearest factory to target with ownership"""
+        neighbors = list(filter(
+            lambda x: self.factories[x[0]].ownership == ownership,
+            self.neighbors[target.entity_id]))
+        print("get_nearest_factory: " + str(neighbors), file=sys.stderr)
+        if not neighbors:
+            return
+        return self.factories[min(neighbors, key=lambda x: x[1])[0]]
 
     def __str__(self):
         return "FactoryNetwork(factories: {}, neighbors: {})".format(self.factories, self.neighbors)
@@ -91,13 +140,20 @@ class FactoryNetwork:
 
 def format_move(src, dst, units):
     """format troop move"""
+    src.number_of_cyborgs -= units
     return "MOVE {} {} {}".format(src.entity_id, dst.entity_id, units)
 
 
-def read_game_status(factory_network, troops):
+def format_bomb(src, dst):
+    """format bomb deployment"""
+    return "BOMB {} {}".format(src.entity_id, dst.entity_id)
+
+
+def read_game_status(factory_network, troops, bombs):
     """reading current game status from stdin"""
     entity_count = int(input())  # the number of entities (e.g. factories and troops)
     troops.clear()
+    bombs.clear()
     for _ in range(entity_count):
         entity_id, entity_type, arg_1, arg_2, arg_3, arg_4, arg_5 = input().split()
         entity_id = int(entity_id)
@@ -113,7 +169,10 @@ def read_game_status(factory_network, troops):
             factory.production = arg_3
         elif entity_type == ENTITY_TROOP:
             trooper = Trooper(entity_id, arg_1, arg_2, arg_3, arg_4, arg_5)
-            troops[entity_id] = trooper
+            troops.append(trooper)
+        elif entity_type == ENTITY_BOMB:
+            bomb = Bomb(entity_id, arg_1, arg_2, arg_3, arg_4)
+            bombs.append(bomb)
 
 
 def calc_attack_move(factory_network):
@@ -229,13 +288,57 @@ def calc_defend_move(factory_network):
     return defensive_moves
 
 
-TROOPS = {}
+def check_rush_move(factory_network):
+    """Check if we should perform a rush move
+    Rush is done by sending every trooper and a bomb
+    to enemy's most productive factory
+    """
+    neutral_factories_by_production = sorted(
+        factory_network.neutral_factories(),
+        key=lambda x: x.production,
+        reverse=True)
+    print("rush: " + str(neutral_factories_by_production), file=sys.stderr)
+    if neutral_factories_by_production and neutral_factories_by_production[0].production == 0:
+        print("there are no neutral factories worth fighting for, perform rush", file=sys.stderr)
+        return True
+    return False
+
+
+BOMBS = []
+TROOPS = []
 FACTORY_NETWORK = FactoryNetwork()
 print(str(FACTORY_NETWORK), file=sys.stderr)
 
+
 def game_turn():
     """single gameturn"""
-    read_game_status(FACTORY_NETWORK, TROOPS)
+    read_game_status(FACTORY_NETWORK, TROOPS, BOMBS)
+
+    my_bombs_in_play = list(filter(lambda x: x.ownership == SELF, BOMBS))
+    print("my bombs in play: " + str(my_bombs_in_play), file=sys.stderr)
+    perform_rush = check_rush_move(FACTORY_NETWORK)
+    print("perform rush: " + str(perform_rush), file=sys.stderr)
+    if perform_rush and len(my_bombs_in_play) == 0:
+        targets = FACTORY_NETWORK.enemy_factories_most_troops()
+        if targets:
+            target = targets[0]
+            src = FACTORY_NETWORK.get_nearest_factory(target, SELF)
+            if src:
+                print("perform rush: deploy bomb on {} from {}".format(
+                    target, src), file=sys.stderr)
+                BOMBS.append(Bomb(-1, SELF, src.entity_id, target.entity_id, -1))
+                print(format_bomb(src, target))
+                return
+    elif perform_rush and len(my_bombs_in_play) == 1:
+        targets = FACTORY_NETWORK.enemy_factories_most_troops()
+        if targets:
+            target = targets[0]
+            src = FACTORY_NETWORK.get_nearest_factory(target, SELF)
+            print("perform rush: deploy troops on {} from {}".format(target, src), file=sys.stderr)
+            if src:
+                print(format_move(src, target, src.number_of_cyborgs))
+                return
+
     attack_move = calc_attack_move(FACTORY_NETWORK)
     if attack_move:
         print(attack_move, file=sys.stderr)
@@ -250,5 +353,12 @@ def game_turn():
 
     print("WAIT")
 
-while True:
-    game_turn()
+
+def game_loop():
+    """play game till victory or death"""
+    turn_count = 0
+    while True:
+        game_turn()
+        turn_count += 1
+
+game_loop()
