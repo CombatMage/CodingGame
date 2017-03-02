@@ -75,6 +75,14 @@ class FactoryNetwork:
         self.neighbors[factory_a].append([factory_b, travel_time])
         self.neighbors[factory_b].append([factory_a, travel_time])
 
+    def enemy_has_production(self):
+        """check if the enemy has factories remaining with a production > 0
+        """
+        enemy_has_production = filter(
+            lambda factory: factory.ownership != SELF and factory.production > 0,
+            self.factories)
+        return enemy_has_production
+
     def __str__(self):
         return "FactoryNetwork(factories: {}, neighbors: {})".format(self.factories, self.neighbors)
 
@@ -138,33 +146,38 @@ def get_factory_to_attack(factory_network, attacking_factory):
     """
     possible_targets = []
     neighbors = factory_network.neighbors[attacking_factory.entity_id]
+    enemy_has_production = factory_network.enemy_has_production()
     for factory_id, travel_time in neighbors:
         factory = factory_network.factories[factory_id]
         if factory.ownership == SELF:
+            continue
+        # factory is useless and more important targets are available
+        if factory.production == 0 and enemy_has_production:
             continue
         defenders = factory.number_of_cyborgs + factory.production * travel_time
         if defenders < attacking_factory.number_of_cyborgs / 2:
             possible_targets.append((factory, defenders, travel_time))
 
     if possible_targets:
-        return max(
-            possible_targets,
-            key=lambda x: calc_value_of_target(x[0], x[1], x[2])
-        )[0]
+        primary_targets = []
+        secondary_targets = []
+        remaining_targets = []
+        for factory, defenders, travel_time in possible_targets:
+            if factory.production == 3:
+                primary_targets.append((factory, defenders, travel_time))
+            elif factory.production == 2:
+                secondary_targets.append((factory, defenders, travel_time))
+            else:
+                remaining_targets.append((factory, defenders, travel_time))
+        to_attack = primary_targets
+        if not primary_targets:
+            to_attack = secondary_targets
+        elif not secondary_targets:
+            to_attack = remaining_targets
+        # TODO consider travel_time for ties
+        weak_defenders = sorted(to_attack, key=lambda x: x[1])
+        return weak_defenders[0][0]
     return None
-
-
-def calc_value_of_target(factory, defenders, travel_time):
-    """calculate the value of a target
-    Rules:
-    1. Production is most important
-    2. Number of defenders
-    3. travel_time
-    """
-    value = 4 * factory.production
-    value -= defenders
-    value -= travel_time
-    return value
 
 
 def calc_preparation_move(factory_network):
