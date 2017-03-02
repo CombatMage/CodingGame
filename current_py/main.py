@@ -367,13 +367,14 @@ def game_turn(turn):
 
     defensive_moves = calc_defend_move(FACTORY_NETWORK)
     if defensive_moves:
-        all_moves.append(defensive_moves)
+        for move in defensive_moves:
+            all_moves.append(move)
     #     print(str(defensive_moves), file=sys.stderr)
     #     print(";".join(defensive_moves))
     #     return
     print("all available moves " + str(all_moves), file=sys.stderr)
     if all_moves:
-        print(";".join(defensive_moves))
+        print(";".join(all_moves))
     else:
         print("WAIT")
 
