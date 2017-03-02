@@ -1,6 +1,5 @@
 """ghost in the shell"""
 import sys
-import math
 
 # Auto-generated code below aims at helping you parse
 # the standard input according to the problem statement.
@@ -169,12 +168,16 @@ def get_factory_to_attack(factory_network, attacking_factory):
                 secondary_targets.append((factory, defenders, travel_time))
             else:
                 remaining_targets.append((factory, defenders, travel_time))
-        to_attack = primary_targets
-        if not primary_targets:
+        to_attack = []
+        if primary_targets:
+            to_attack = primary_targets
+        elif secondary_targets:
             to_attack = secondary_targets
-        elif not secondary_targets:
+        elif remaining_targets:
             to_attack = remaining_targets
-        # TODO consider travel_time for ties
+        else:
+            return None
+
         weak_defenders = sorted(to_attack, key=lambda x: x[1])
         return weak_defenders[0][0]
     return None
@@ -182,7 +185,6 @@ def get_factory_to_attack(factory_network, attacking_factory):
 
 def calc_preparation_move(factory_network):
     """if we do not attack, we are concentrating our troops"""
-
     my_factories = filter(
         lambda factory: factory.ownership == SELF,
         factory_network.factories)
