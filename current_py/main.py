@@ -75,15 +75,24 @@ class FactoryNetwork:
         self.neighbors[factory_b].append([factory_a, travel_time])
 
     def enemy_has_production(self):
-        """check if the enemy has factories remaining with a production > 0
-        """
-        enemy_has_production = filter(
+        """check if the enemy has factories remaining with a production > 0"""
+        enemy_production_facilities = list(filter(
             lambda factory: factory.ownership != SELF and factory.production > 0,
-            self.factories)
-        return enemy_has_production
+            self.factories))
+        return len(enemy_production_facilities) > 0
+
+    def my_factories(self):
+        """return factories with ownership self"""
+        return filter(lambda factory: factory.ownership == SELF, self.factories)
 
     def __str__(self):
         return "FactoryNetwork(factories: {}, neighbors: {})".format(self.factories, self.neighbors)
+
+
+def format_move(src, dst, units):
+    """format troop move"""
+    return "MOVE {} {} {}".format(src.entity_id, dst.entity_id, units)
+
 
 def read_game_status(factory_network, troops):
     """reading current game status from stdin"""
@@ -115,8 +124,7 @@ def calc_attack_move(factory_network):
         target = get_factory_to_attack(factory_network, attacker)
         print("possible target: " + str(target), file=sys.stderr)
         if target:
-            return "MOVE {} {} {}".format(
-                attacker.entity_id, target.entity_id, int(attacker.number_of_cyborgs / 2))
+            return format_move(attacker, target, int(attacker.number_of_cyborgs / 2))
     return None
 
 
@@ -146,6 +154,9 @@ def get_factory_to_attack(factory_network, attacking_factory):
     possible_targets = []
     neighbors = factory_network.neighbors[attacking_factory.entity_id]
     enemy_has_production = factory_network.enemy_has_production()
+    if not enemy_has_production:
+        print("enemy has no production, domination is archived", file=sys.stderr)
+
     for factory_id, travel_time in neighbors:
         factory = factory_network.factories[factory_id]
         if factory.ownership == SELF:
@@ -185,9 +196,7 @@ def get_factory_to_attack(factory_network, attacking_factory):
 
 def calc_preparation_move(factory_network):
     """if we do not attack, we are concentrating our troops"""
-    my_factories = filter(
-        lambda factory: factory.ownership == SELF,
-        factory_network.factories)
+    my_factories = factory_network.my_factories()
     sorted_factories = sorted(
         my_factories,
         key=lambda factory: factory.number_of_cyborgs,
@@ -196,11 +205,28 @@ def calc_preparation_move(factory_network):
     if len(sorted_factories) >= 2:
         most_troops = sorted_factories[0]
 
-        return "MOVE {} {} {}".format(
-            sorted_factories[1].entity_id,
-            most_troops.entity_id,
-            int(sorted_factories[1].number_of_cyborgs))
+        return format_move(
+            sorted_factories[1], most_troops, int(sorted_factories[1].number_of_cyborgs))
     return None
+
+
+def calc_defend_move(factory_network):
+    """calculte defensive move"""
+    defensive_moves = []
+    my_factories = sorted(
+        factory_network.my_factories(),
+        key=lambda factory: factory.production,
+        reverse=True)
+    remaining_defensive_manouvers = 3 if len(my_factories) > 3 else 1
+    move_to = my_factories[0:remaining_defensive_manouvers]
+    take_from = my_factories[remaining_defensive_manouvers:]
+    index = 0
+    for factory in take_from:
+        if index >= len(move_to): # simple wrap around
+            index = 0
+        dst = move_to[index]
+        defensive_moves.append(format_move(factory, dst, factory.number_of_cyborgs))
+    return defensive_moves
 
 
 TROOPS = {}
@@ -215,11 +241,13 @@ def game_turn():
         print(attack_move, file=sys.stderr)
         print(attack_move)
         return
-    prepare_move = calc_preparation_move(FACTORY_NETWORK)
-    if prepare_move:
-        print(prepare_move, file=sys.stderr)
-        print(prepare_move)
+
+    defensive_moves = calc_defend_move(FACTORY_NETWORK)
+    if defensive_moves:
+        print(str(defensive_moves), file=sys.stderr)
+        print(";".join(defensive_moves))
         return
+
     print("WAIT")
 
 while True:
