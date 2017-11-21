@@ -1,5 +1,7 @@
 import java.util.*
 
+const val COST_OIL_RAGE = 30
+
 class Input(
 	val myRage: Int,
 	val enemyScore1: Int,
@@ -9,6 +11,8 @@ class Input(
 	val myReaper: GameUnit = this.allUnits.first { it.isReaper && it.isOwned }
 	val myDestroyer: GameUnit = this.allUnits.first { it.isDestroyer && it.isOwned }
 	val myDoof: GameUnit = this.allUnits.first { it.isDoof && it.isOwned }
+
+	val enemyReapers: List<GameUnit> = this.allUnits.filter { it.isReaper && !it.isOwned }
 
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }

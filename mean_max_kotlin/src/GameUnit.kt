@@ -41,6 +41,16 @@ data class GameUnit(
 		return distances.sortedBy { it.distance }
 	}
 
+	fun getDistanceToTarget(target: GameUnit): Double {
+		return Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0)
+	}
+
+	fun getOutputForTarget(distance: Double, target: GameUnit): String {
+		val vector = this.getVectorForTarget(target)
+		val thrust = this.getThrustForTarget(distance)
+		return "${vector.x} ${vector.y} $thrust"
+	}
+
 	fun getVectorForTarget(target: GameUnit): Vector {
 		return Vector(
 				target.x - this.speedX + target.speedX,
@@ -48,11 +58,7 @@ data class GameUnit(
 		)
 	}
 
-	fun getDistanceToTarget(target: GameUnit): Double {
-		return Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0)
-	}
-
-	fun getThrustForTarget(distance: Double): Int {
+	private fun getThrustForTarget(distance: Double): Int {
 		if (this.isDestroyer) {
 			return 300
 		}
@@ -60,12 +66,19 @@ data class GameUnit(
 		if (this.isReaper) {
 			return when {
 				distance > 500 -> 300
-				distance > 250 -> 100
+				distance > 250 -> 200
 				else -> 0
 			}
 		}
 
 		return 0
+	}
+
+	fun getOutputForSkill(target: GameUnit): String {
+		return when {
+			this.isDoof -> "Oil ${target.x} ${target.y}"
+			else -> "WAIT"
+		}
 	}
 
 	companion object {
