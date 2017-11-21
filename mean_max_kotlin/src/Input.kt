@@ -1,10 +1,15 @@
 import java.util.*
 
 class Input(
+	val myRage: Int,
+	val enemyScore1: Int,
+	val enemyScore2: Int,
 	private val allUnits: Array<GameUnit>
 ) {
-	val myReapers: List<GameUnit> = this.allUnits.filter { it.isReaper && it.isOwned }
-	val myDestroyers: List<GameUnit> = this.allUnits.filter { it.isDestroyer && it.isOwned }
+	val myReaper: GameUnit = this.allUnits.first { it.isReaper && it.isOwned }
+	val myDestroyer: GameUnit = this.allUnits.first { it.isDestroyer && it.isOwned }
+	val myDoof: GameUnit = this.allUnits.first { it.isDoof && it.isOwned }
+
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }
 
@@ -23,7 +28,12 @@ class Input(
 				GameUnit.fromScanner(input)
 			})
 
-			return Input(units)
+			return Input(
+					myRage = myRage,
+					enemyScore1 = enemyScore1,
+					enemyScore2 = enemyScore2,
+					allUnits = units
+			)
 		}
 	}
 }

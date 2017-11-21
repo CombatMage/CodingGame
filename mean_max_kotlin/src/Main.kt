@@ -1,10 +1,11 @@
 import java.util.*
 
 fun getReaperAction(input: Input): String {
-	val reaper = input.myReapers.first()
+	val reaper = input.myReaper
 	val wrecks = reaper.getObjectByDistance(input.wrecks)
 
 	if (wrecks.count() == 0) {
+		// if nothing to harvest, close to nearest tanker
 		return "WAIT"
 	}
 
@@ -16,10 +17,10 @@ fun getReaperAction(input: Input): String {
 }
 
 fun getDestroyerAction(input: Input): String {
-	val destroyer = input.myDestroyers.first()
+	val destroyer = input.myDestroyer
 
 	// select tanker close to our reaper as target
-	val reaper = input.myReapers.first()
+	val reaper = input.myReaper
 	val tanker = reaper.getObjectByDistance(input.tanker)
 
 	if (tanker.count() == 0) {
@@ -34,6 +35,12 @@ fun getDestroyerAction(input: Input): String {
 	return "${vector.x} ${vector.y} $thrust"
 }
 
+fun getDoofAction(input: Input): String {
+
+
+	return "WAIT"
+}
+
 fun main(args : Array<String>) {
 	val scanner = Scanner(System.`in`)
 
@@ -43,13 +50,10 @@ fun main(args : Array<String>) {
 
 		val reaperAction = getReaperAction(input)
 		val destroyerAction = getDestroyerAction(input)
-
-
+		val doofAction = getDoofAction(input)
 
 		println(reaperAction)
 		println(destroyerAction)
-
-		// unused
-		println("WAIT")
+		println(doofAction)
 	}
 }

@@ -26,6 +26,7 @@ data class GameUnit(
 ) {
 	val isReaper = this.unitType == T_REAPER
 	val isDestroyer = this.unitType == T_DESTROYER
+	val isDoof = this.unitType == T_DOOF
 	val isTanker = this.unitType == T_TANKER
 	val isWreck = this.unitType == T_WRECK
 
@@ -92,8 +93,10 @@ data class GameUnit(
 class Input(
 	private val allUnits: Array<GameUnit>
 ) {
-	val myReapers: List<GameUnit> = this.allUnits.filter { it.isReaper && it.isOwned }
-	val myDestroyers: List<GameUnit> = this.allUnits.filter { it.isDestroyer && it.isOwned }
+	val myReaper: GameUnit = this.allUnits.first { it.isReaper && it.isOwned }
+	val myDestroyer: GameUnit = this.allUnits.first { it.isDestroyer && it.isOwned }
+	val myDoof: GameUnit = this.allUnits.first { it.isDoof && it.isOwned }
+
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }
 
@@ -117,7 +120,7 @@ class Input(
 	}
 }
 fun getReaperAction(input: Input): String {
-	val reaper = input.myReapers.first()
+	val reaper = input.myReaper
 	val wrecks = reaper.getObjectByDistance(input.wrecks)
 
 	if (wrecks.count() == 0) {
@@ -132,10 +135,10 @@ fun getReaperAction(input: Input): String {
 }
 
 fun getDestroyerAction(input: Input): String {
-	val destroyer = input.myDestroyers.first()
+	val destroyer = input.myDestroyer
 
 	// select tanker close to our reaper as target
-	val reaper = input.myReapers.first()
+	val reaper = input.myReaper
 	val tanker = reaper.getObjectByDistance(input.tanker)
 
 	if (tanker.count() == 0) {

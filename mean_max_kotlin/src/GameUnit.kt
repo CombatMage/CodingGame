@@ -20,10 +20,12 @@ data class GameUnit(
 		val y: Int,
 		val speedX: Int,
 		val speedY: Int,
-		val waterQuantity: Int
+		val waterQuantity: Int,
+		val waterCapacity: Int
 ) {
 	val isReaper = this.unitType == T_REAPER
 	val isDestroyer = this.unitType == T_DESTROYER
+	val isDoof = this.unitType == T_DOOF
 	val isTanker = this.unitType == T_TANKER
 	val isWreck = this.unitType == T_WRECK
 
@@ -68,7 +70,7 @@ data class GameUnit(
 
 	companion object {
 		fun fromScanner(input: Scanner): GameUnit {
-			val gameUnit = GameUnit(
+			return GameUnit(
 					unitId = input.nextInt(),
 					unitType = input.nextInt(),
 					player = input.nextInt(),
@@ -78,12 +80,9 @@ data class GameUnit(
 					y = input.nextInt(),
 					speedX = input.nextInt(),
 					speedY = input.nextInt(),
-					waterQuantity = input.nextInt()
+					waterQuantity = input.nextInt(),
+					waterCapacity = input.nextInt()
 			)
-			// unused
-			val extra2 = input.nextInt()
-
-			return gameUnit
 		}
 	}
 }
