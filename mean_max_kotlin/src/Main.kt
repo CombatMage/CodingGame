@@ -68,11 +68,18 @@ fun main(args : Array<String>) {
 
 	// game loop
 	while (true) {
+		val start = System.nanoTime()
+
 		val input = Input.fromScanner(scanner)
 
 		val reaperAction = getReaperAction(input)
 		val destroyerAction = getDestroyerAction(input)
 		val doofAction = getDoofAction(input)
+
+		val end = System.nanoTime()
+
+		val responseTime = (end - start) / 1000000
+		System.err.println("Response time: $responseTime ms")
 
 		println(reaperAction)
 		println(destroyerAction)

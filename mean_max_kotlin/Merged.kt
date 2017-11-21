@@ -1,5 +1,5 @@
-import kotlin.coroutines.experimental.buildSequence
 import java.util.*
+import kotlin.coroutines.experimental.buildSequence
 
 
 
@@ -44,7 +44,7 @@ data class GameUnit(
 	}
 
 	fun getDistanceToTarget(target: GameUnit): Double {
-		return Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0)
+		return Math.sqrt(Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0))
 	}
 
 	fun getOutputForTarget(distance: Double, target: GameUnit): String {
@@ -77,10 +77,7 @@ data class GameUnit(
 	}
 
 	fun getOutputForSkill(target: GameUnit): String {
-		return when {
-			this.isDoof -> "Oil ${target.x} ${target.y}"
-			else -> "WAIT"
-		}
+		return "SKILL ${target.x} ${target.y}"
 	}
 
 	companion object {
@@ -210,11 +207,18 @@ fun main(args : Array<String>) {
 
 	// game loop
 	while (true) {
+		val start = System.nanoTime()
+
 		val input = Input.fromScanner(scanner)
 
 		val reaperAction = getReaperAction(input)
 		val destroyerAction = getDestroyerAction(input)
 		val doofAction = getDoofAction(input)
+
+		val end = System.nanoTime()
+
+		val responseTime = (end - start) / 1000000
+		System.err.println("Response time: $responseTime ms")
 
 		println(reaperAction)
 		println(destroyerAction)

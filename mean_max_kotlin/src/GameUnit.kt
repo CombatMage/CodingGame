@@ -42,7 +42,7 @@ data class GameUnit(
 	}
 
 	fun getDistanceToTarget(target: GameUnit): Double {
-		return Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0)
+		return Math.sqrt(Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0))
 	}
 
 	fun getOutputForTarget(distance: Double, target: GameUnit): String {
@@ -75,10 +75,7 @@ data class GameUnit(
 	}
 
 	fun getOutputForSkill(target: GameUnit): String {
-		return when {
-			this.isDoof -> "Oil ${target.x} ${target.y}"
-			else -> "WAIT"
-		}
+		return "SKILL ${target.x} ${target.y}"
 	}
 
 	companion object {
