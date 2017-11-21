@@ -60,15 +60,19 @@ data class GameUnit(
 		)
 	}
 
-	private fun getThrustForTarget(distance: Double): Int {
+	fun getThrustForTarget(distance: Double): Int {
 		if (this.isDestroyer) {
+			return 300
+		}
+
+		if (this.isDoof) {
 			return 300
 		}
 
 		if (this.isReaper) {
 			return when {
 				distance > 500 -> 300
-				distance > 250 -> 200
+				distance > 250 -> 100
 				else -> 0
 			}
 		}
@@ -193,15 +197,16 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	}
 
 	// crash nearest enemy
-	val (_, target) = enemies.first()
+	val (distance, target) = enemies.first()
 	val vector = doof.getVectorForTarget(target)
+	val thrust = doof.getThrustForTarget(distance)
 
 	val speak = if (gameTurn % 10 < 5) {
 		"I live, I die."
 	} else {
 		"I LIVE AGAIN!!"
 	}
-	return "${vector.x} ${vector.y} 300 $speak" // always go full speed ahead
+	return "${vector.x} ${vector.y} $thrust $speak" // always go full speed ahead
 }
 
 fun main(args : Array<String>) {

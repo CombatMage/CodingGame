@@ -58,15 +58,19 @@ data class GameUnit(
 		)
 	}
 
-	private fun getThrustForTarget(distance: Double): Int {
+	fun getThrustForTarget(distance: Double): Int {
 		if (this.isDestroyer) {
+			return 300
+		}
+
+		if (this.isDoof) {
 			return 300
 		}
 
 		if (this.isReaper) {
 			return when {
 				distance > 500 -> 300
-				distance > 250 -> 200
+				distance > 250 -> 100
 				else -> 0
 			}
 		}
