@@ -1,5 +1,5 @@
-import java.util.*
 import kotlin.coroutines.experimental.buildSequence
+import java.util.*
 
 
 
@@ -176,7 +176,7 @@ fun getDestroyerAction(input: Input): String {
 	return destroyer.getOutputForTarget(distance, target)
 }
 
-fun getDoofAction(input: Input): String {
+fun getDoofAction(input: Input, gameTurn: Int): String {
 	val doof = input.myDoof
 	val reaper = input.myReaper
 	val rage = input.myRage
@@ -184,10 +184,6 @@ fun getDoofAction(input: Input): String {
 
 	val wrecks = doof.getObjectByDistance(input.wrecks)
 	val wrecksInRange = wrecks.filter { it.distance < 2000 }
-
-	System.err.println("wrecks: " + wrecks.toList())
-	System.err.println("wrecks in range: " + wrecksInRange.toList())
-	System.err.println("current rage: " + rage)
 
 	if (wrecksInRange.count() > 0 && rage >= COST_OIL_RAGE) {
 		// enough rage and wrecks in range, spill oil
@@ -199,12 +195,19 @@ fun getDoofAction(input: Input): String {
 	// crash nearest enemy
 	val (_, target) = enemies.first()
 	val vector = doof.getVectorForTarget(target)
-	return "${vector.x} ${vector.y} 300" // always go full speed ahead
+
+	val speak = if (gameTurn % 10 < 5) {
+		"I live, I die."
+	} else {
+		"I LIVE AGAIN!!"
+	}
+	return "${vector.x} ${vector.y} 300 $speak" // always go full speed ahead
 }
 
 fun main(args : Array<String>) {
 	val scanner = Scanner(System.`in`)
 
+	var gameTurn = 0
 	// game loop
 	while (true) {
 		val start = System.nanoTime()
@@ -213,7 +216,7 @@ fun main(args : Array<String>) {
 
 		val reaperAction = getReaperAction(input)
 		val destroyerAction = getDestroyerAction(input)
-		val doofAction = getDoofAction(input)
+		val doofAction = getDoofAction(input, gameTurn)
 
 		val end = System.nanoTime()
 
@@ -223,5 +226,6 @@ fun main(args : Array<String>) {
 		println(reaperAction)
 		println(destroyerAction)
 		println(doofAction)
+		gameTurn++
 	}
 }
