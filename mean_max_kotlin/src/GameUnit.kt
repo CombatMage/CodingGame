@@ -1,3 +1,4 @@
+import java.lang.Math.*
 import java.util.*
 import kotlin.coroutines.experimental.buildSequence
 
@@ -32,18 +33,22 @@ data class GameUnit(
 	val isOwned = this.player == 0
 
 
-	fun getObjectByDistance(objects: List<GameUnit>): Sequence<DistanceByTarget> {
+	fun getObjectByDistance(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
 		val distances = buildSequence {
 			objects.forEach { obj ->
 				val d = getDistanceToTarget(obj)
 				yield(DistanceByTarget(d, obj))
 			}
 		}
-		return distances.sortedBy { it.distance }
+		return distances.sortedWith(
+				compareBy<DistanceByTarget> { it.distance.toInt() }
+						.thenByDescending(tieBreak)
+		)
 	}
 
 	fun getDistanceToTarget(target: GameUnit): Double {
-		return Math.sqrt(Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0))
+		// round to nearest ten
+		return ((sqrt(pow((x - target.x).toDouble(), 2.0) + pow((y - target.y).toDouble(), 2.0)) + 5) / 10) * 10
 	}
 
 	fun getOutputForTarget(distance: Double, target: GameUnit): String {

@@ -1,5 +1,6 @@
 import java.util.*
 import kotlin.coroutines.experimental.buildSequence
+import java.lang.Math.*
 
 
 
@@ -34,18 +35,22 @@ data class GameUnit(
 	val isOwned = this.player == 0
 
 
-	fun getObjectByDistance(objects: List<GameUnit>): Sequence<DistanceByTarget> {
+	fun getObjectByDistance(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
 		val distances = buildSequence {
 			objects.forEach { obj ->
 				val d = getDistanceToTarget(obj)
 				yield(DistanceByTarget(d, obj))
 			}
 		}
-		return distances.sortedBy { it.distance }
+		return distances.sortedWith(
+				compareBy<DistanceByTarget> { it.distance.toInt() }
+						.thenByDescending(tieBreak)
+		)
 	}
 
 	fun getDistanceToTarget(target: GameUnit): Double {
-		return Math.sqrt(Math.pow((x - target.x).toDouble(), 2.0) + Math.pow((y - target.y).toDouble(), 2.0))
+		// round to nearest ten
+		return ((sqrt(pow((x - target.x).toDouble(), 2.0) + pow((y - target.y).toDouble(), 2.0)) + 5) / 10) * 10
 	}
 
 	fun getOutputForTarget(distance: Double, target: GameUnit): String {
@@ -121,6 +126,15 @@ class Input(
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }
 
+	fun getScoreForGameUnit(unit: GameUnit): Int {
+		return when {
+			unit.player == 1 -> this.enemyScore1
+			unit.player == 2 -> this.enemyScore2
+			else -> this.myScore
+		}
+
+	}
+
 	companion object {
 		fun fromScanner(input: Scanner): Input {
 			// unused
@@ -148,8 +162,8 @@ class Input(
 }
 fun getReaperAction(input: Input): String {
 	val reaper = input.myReaper
-	val wrecks = reaper.getObjectByDistance(input.wrecks)
-	val tanker = reaper.getObjectByDistance(input.tanker)
+	val wrecks = reaper.getObjectByDistance(input.wrecks, { it.target.waterQuantity})
+	val tanker = reaper.getObjectByDistance(input.tanker, { it.target.waterQuantity})
 
 	if (wrecks.count() > 0) {
 		// target nearest wreck
@@ -171,7 +185,7 @@ fun getDestroyerAction(input: Input): String {
 
 	// select tanker close to our reaper as target
 	val reaper = input.myReaper
-	val tanker = reaper.getObjectByDistance(input.tanker)
+	val tanker = reaper.getObjectByDistance(input.tanker, { it.target.waterQuantity })
 
 	if (tanker.count() == 0) {
 		return "WAIT"
@@ -187,16 +201,19 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	val doof = input.myDoof
 	val reaper = input.myReaper
 	val rage = input.myRage
-	val enemies = doof.getObjectByDistance(input.enemyReapers)
+	val enemies = doof.getObjectByDistance(input.enemyReapers, { input.getScoreForGameUnit(it.target)})
 
-	val wrecks = doof.getObjectByDistance(input.wrecks)
+	val wrecks = doof.getObjectByDistance(input.wrecks, { it.target.waterQuantity })
 	val wrecksInRange = wrecks.filter { it.distance < 2000 }
 
 	if (wrecksInRange.count() > 0 && rage >= COST_OIL_RAGE) {
 		// enough rage and wrecks in range, spill oil
 		// target is the wreck with the largest distance to our reaper
-		val wreck = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList()).last().target
-		return doof.getOutputForSkill(wreck)
+		val (distance, wreck) = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList(), { it.target.waterQuantity }).last()
+
+		if (distance > 1000) {
+			return doof.getOutputForSkill(wreck)
+		}
 	}
 
 	// crash nearest enemy

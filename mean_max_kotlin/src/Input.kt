@@ -18,6 +18,15 @@ class Input(
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }
 
+	fun getScoreForGameUnit(unit: GameUnit): Int {
+		return when {
+			unit.player == 1 -> this.enemyScore1
+			unit.player == 2 -> this.enemyScore2
+			else -> this.myScore
+		}
+
+	}
+
 	companion object {
 		fun fromScanner(input: Scanner): Input {
 			// unused

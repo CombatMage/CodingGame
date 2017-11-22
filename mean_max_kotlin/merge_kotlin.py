@@ -15,7 +15,8 @@ def get_kotlin_files(path):
     returns list of files
     """
     kotlin_files = [
-        join(path, f) for f in listdir(path) if isfile(join(path, f)) and f.endswith(".kt")
+        join(path, f)
+        for f in listdir(path) if isfile(join(path, f)) and f.endswith(".kt") and "Test" not in f
     ]
     return kotlin_files
 

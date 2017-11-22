@@ -2,8 +2,8 @@ import java.util.*
 
 fun getReaperAction(input: Input): String {
 	val reaper = input.myReaper
-	val wrecks = reaper.getObjectByDistance(input.wrecks)
-	val tanker = reaper.getObjectByDistance(input.tanker)
+	val wrecks = reaper.getObjectByDistance(input.wrecks, { it.target.waterQuantity})
+	val tanker = reaper.getObjectByDistance(input.tanker, { it.target.waterQuantity})
 
 	if (wrecks.count() > 0) {
 		// target nearest wreck
@@ -25,7 +25,7 @@ fun getDestroyerAction(input: Input): String {
 
 	// select tanker close to our reaper as target
 	val reaper = input.myReaper
-	val tanker = reaper.getObjectByDistance(input.tanker)
+	val tanker = reaper.getObjectByDistance(input.tanker, { it.target.waterQuantity })
 
 	if (tanker.count() == 0) {
 		return "WAIT"
@@ -41,16 +41,19 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	val doof = input.myDoof
 	val reaper = input.myReaper
 	val rage = input.myRage
-	val enemies = doof.getObjectByDistance(input.enemyReapers)
+	val enemies = doof.getObjectByDistance(input.enemyReapers, { input.getScoreForGameUnit(it.target)})
 
-	val wrecks = doof.getObjectByDistance(input.wrecks)
+	val wrecks = doof.getObjectByDistance(input.wrecks, { it.target.waterQuantity })
 	val wrecksInRange = wrecks.filter { it.distance < 2000 }
 
 	if (wrecksInRange.count() > 0 && rage >= COST_OIL_RAGE) {
 		// enough rage and wrecks in range, spill oil
 		// target is the wreck with the largest distance to our reaper
-		val wreck = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList()).last().target
-		return doof.getOutputForSkill(wreck)
+		val (distance, wreck) = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList(), { it.target.waterQuantity }).last()
+
+		if (distance > 1000) {
+			return doof.getOutputForSkill(wreck)
+		}
 	}
 
 	// crash nearest enemy
