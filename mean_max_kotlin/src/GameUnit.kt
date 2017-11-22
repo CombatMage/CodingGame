@@ -31,7 +31,8 @@ data class GameUnit(
 	val isWreck = this.unitType == T_WRECK
 
 	val isOwned = this.player == 0
-
+	val isNeutral = this.player == -1
+	val isEnemy = !this.isOwned && !this.isNeutral
 
 	fun getObjectByDistance(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
 		val distances = buildSequence {

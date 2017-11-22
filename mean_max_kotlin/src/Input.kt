@@ -1,6 +1,7 @@
 import java.util.*
 
 const val COST_OIL_RAGE = 30
+const val COST_NITRO_RAGE = 60
 
 class Input(
 	val myRage: Int,
@@ -13,6 +14,7 @@ class Input(
 	val myDestroyer: GameUnit = this.allUnits.first { it.isDestroyer && it.isOwned }
 	val myDoof: GameUnit = this.allUnits.first { it.isDoof && it.isOwned }
 
+	val enemies: List<GameUnit> = this.allUnits.filter { it.isEnemy }
 	val enemyReapers: List<GameUnit> = this.allUnits.filter { it.isReaper && !it.isOwned }
 
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
