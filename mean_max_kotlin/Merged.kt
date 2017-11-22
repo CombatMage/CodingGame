@@ -1,5 +1,5 @@
-import kotlin.coroutines.experimental.buildSequence
 import java.util.*
+import kotlin.coroutines.experimental.buildSequence
 
 
 
@@ -32,6 +32,7 @@ data class GameUnit(
 	val isWreck = this.unitType == T_WRECK
 
 	val isOwned = this.player == 0
+
 
 	fun getObjectByDistance(objects: List<GameUnit>): Sequence<DistanceByTarget> {
 		val distances = buildSequence {
@@ -106,6 +107,7 @@ const val COST_OIL_RAGE = 30
 
 class Input(
 	val myRage: Int,
+	val myScore: Int,
 	val enemyScore1: Int,
 	val enemyScore2: Int,
 	private val allUnits: Array<GameUnit>
@@ -135,6 +137,7 @@ class Input(
 			})
 
 			return Input(
+					myScore = myScore,
 					myRage = myRage,
 					enemyScore1 = enemyScore1,
 					enemyScore2 = enemyScore2,

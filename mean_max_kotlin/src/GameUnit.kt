@@ -31,6 +31,7 @@ data class GameUnit(
 
 	val isOwned = this.player == 0
 
+
 	fun getObjectByDistance(objects: List<GameUnit>): Sequence<DistanceByTarget> {
 		val distances = buildSequence {
 			objects.forEach { obj ->

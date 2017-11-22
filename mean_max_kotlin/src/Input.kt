@@ -4,6 +4,7 @@ const val COST_OIL_RAGE = 30
 
 class Input(
 	val myRage: Int,
+	val myScore: Int,
 	val enemyScore1: Int,
 	val enemyScore2: Int,
 	private val allUnits: Array<GameUnit>
@@ -33,6 +34,7 @@ class Input(
 			})
 
 			return Input(
+					myScore = myScore,
 					myRage = myRage,
 					enemyScore1 = enemyScore1,
 					enemyScore2 = enemyScore2,
