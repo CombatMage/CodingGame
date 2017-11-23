@@ -7,6 +7,7 @@ const val T_DESTROYER = 1
 const val T_DOOF = 2
 const val T_TANKER = 3
 const val T_WRECK = 4
+const val T_OIL = 6
 
 data class DistanceByTarget(val distance: Double, val target: GameUnit)
 data class Vector(val x: Int, val y: Int)
@@ -29,10 +30,13 @@ data class GameUnit(
 	val isDoof = this.unitType == T_DOOF
 	val isTanker = this.unitType == T_TANKER
 	val isWreck = this.unitType == T_WRECK
+	val isOil = this.unitType == T_OIL
 
 	val isOwned = this.player == 0
 	val isNeutral = this.player == -1
 	val isEnemy = !this.isOwned && !this.isNeutral
+
+	val skillDuration = this.waterCapacity
 
 	fun getObjectByDistance(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
 		val distances = buildSequence {

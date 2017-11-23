@@ -19,6 +19,7 @@ class Input(
 
 	val tanker: List<GameUnit> = this.allUnits.filter { it.isTanker }
 	val wrecks: List<GameUnit> = this.allUnits.filter { it.isWreck }
+	val oilDrops: List<GameUnit> = this.allUnits.filter { it.isOil }
 
 	fun getScoreForGameUnit(unit: GameUnit): Int {
 		return when {
