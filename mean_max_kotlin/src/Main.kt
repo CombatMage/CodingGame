@@ -76,6 +76,7 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	val vector = doof.getVectorForTarget(target)
 	val thrust = doof.getThrustForTarget(distance)
 
+	// battle cry
 	val speak = if (gameTurn % 10 < 5) {
 		"I live, I die."
 	} else {
