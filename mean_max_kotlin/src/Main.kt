@@ -1,7 +1,5 @@
 import java.util.*
 
-const val ENABLE_OIL = false
-
 fun isReaperBlocked(input: Input): Boolean {
 	val reaper = input.myReaper
 	val enemiesNearby = reaper.getObjectByDistance(input.enemies, { it.distance }).filter { it.distance < 1000 }
@@ -63,7 +61,7 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	val wrecks = doof.getObjectByDistance(input.wrecks, { it.target.waterQuantity })
 	val wrecksInRange = wrecks.filter { it.distance <= 2000 }
 
-	if (ENABLE_OIL && wrecksInRange.count() > 0 && rage >= COST_OIL_RAGE) {
+	if (wrecksInRange.count() > 0 && rage >= (COST_OIL_RAGE + COST_NITRO_RAGE)) {
 		// enough rage and wrecks in range, spill oil
 		// target is the wreck with the largest distance to our reaper
 		val (distance, wreck) = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList(), { it.target.waterQuantity }).last()
