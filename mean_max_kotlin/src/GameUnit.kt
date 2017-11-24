@@ -2,13 +2,6 @@ import java.lang.Math.*
 import java.util.*
 import kotlin.coroutines.experimental.buildSequence
 
-const val T_REAPER = 0
-const val T_DESTROYER = 1
-const val T_DOOF = 2
-const val T_TANKER = 3
-const val T_WRECK = 4
-const val T_OIL = 6
-
 data class DistanceByTarget(val distance: Double, val target: GameUnit)
 data class Vector(val x: Int, val y: Int)
 
@@ -37,6 +30,18 @@ data class GameUnit(
 	val isEnemy = !this.isOwned && !this.isNeutral
 
 	val skillDuration = this.waterCapacity
+
+	fun getObjectsInDistance(objects: List<GameUnit>, maxDistance: Int): Sequence<DistanceByTarget> {
+		val distances = buildSequence {
+			objects.forEach { obj ->
+				val d = getDistanceToTarget(obj)
+				if (d <= maxDistance) {
+					yield(DistanceByTarget(d, obj))
+				}
+			}
+		}
+		return distances.sortedBy { it.distance }
+	}
 
 	fun getObjectByDistance(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
 		val distances = buildSequence {

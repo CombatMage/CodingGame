@@ -1,8 +1,5 @@
 import java.util.*
 
-const val COST_OIL_RAGE = 30
-const val COST_NITRO_RAGE = 60
-
 class Input(
 	val myRage: Int,
 	val myScore: Int,
