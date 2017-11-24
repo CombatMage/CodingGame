@@ -9,8 +9,8 @@ fun isReaperBlocked(input: Input): Boolean {
 
 fun getReaperAction(input: Input): String {
 	val reaper = input.myReaper
-	val wrecks = reaper.getObjectByDistance(input.wrecks, { it.target.waterQuantity})
-	val tanker = reaper.getObjectByDistance(input.tanker, { it.target.waterQuantity})
+	val wrecks = reaper.getObjectsByDistanceWithSpeed(input.wrecks, { it.target.waterQuantity})
+	val tanker = reaper.getObjectsByDistanceWithSpeed(input.tanker, { it.target.waterQuantity})
 
 	if (wrecks.count() > 0) {
 		// target nearest wreck

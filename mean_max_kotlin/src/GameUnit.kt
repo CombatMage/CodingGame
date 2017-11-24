@@ -3,7 +3,9 @@ import java.util.*
 import kotlin.coroutines.experimental.buildSequence
 
 data class DistanceByTarget(val distance: Double, val target: GameUnit)
-data class Vector(val x: Int, val y: Int)
+data class Vector(val x: Int, val y: Int) {
+	val length = sqrt(pow(x.toDouble(), 2.0) + pow(y.toDouble(), 2.0))
+}
 
 data class GameUnit(
 		val unitId: Int,
@@ -54,6 +56,30 @@ data class GameUnit(
 				compareBy<DistanceByTarget> { it.distance.toInt() }
 						.thenByDescending(tieBreak)
 		)
+	}
+
+	fun getObjectsByDistanceWithSpeed(objects: List<GameUnit>, tieBreak: (DistanceByTarget) -> Comparable<*>?): Sequence<DistanceByTarget> {
+		val distances = buildSequence {
+			objects.forEach { obj ->
+				val d = getDistanceToTargetWithSpeed(obj)
+				yield(DistanceByTarget(d, obj))
+			}
+		}
+		return distances.sortedWith(
+				compareBy<DistanceByTarget> { it.distance.toInt() }
+						.thenByDescending(tieBreak)
+		)
+	}
+
+	private fun getDistanceToTargetWithSpeed(target: GameUnit): Double{
+		val selfX = this.x + this.speedX
+		val selfY = this.y + this.speedY
+
+		val otherX = target.x + target.speedX
+		val otherY = target.y + target.speedY
+
+		val vector = Vector(otherX - selfX, otherY - selfY)
+		return vector.length
 	}
 
 	fun getDistanceToTarget(target: GameUnit): Double {
