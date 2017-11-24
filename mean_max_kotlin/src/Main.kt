@@ -34,7 +34,7 @@ fun getDestroyerAction(input: Input): String {
 
 	// check if reaper is blocked and throw grenade if possible
 	val isReaperBlocked = isReaperBlocked(input)
-	val isReaperInRange = destroyer.getDistanceToTarget(reaper) <= 2000
+	val isReaperInRange = destroyer.getDistanceToTarget(reaper) <= RANGE_SKILL
 	if (isReaperBlocked && isReaperInRange && rage >= COST_GRENADE_RAGE) {
 		return destroyer.getOutputForSkill(reaper)
 	}
@@ -59,14 +59,14 @@ fun getDoofAction(input: Input, gameTurn: Int): String {
 	val enemies = doof.getObjectByDistance(input.enemyReapers, { input.getScoreForGameUnit(it.target)})
 
 	val wrecks = doof.getObjectByDistance(input.wrecks, { it.target.waterQuantity })
-	val wrecksInRange = wrecks.filter { it.distance <= 2000 }
+	val wrecksInRange = wrecks.filter { it.distance <= RANGE_SKILL }
 
 	if (wrecksInRange.count() > 0 && rage >= (COST_OIL_RAGE + COST_GRENADE_RAGE)) {
 		// enough rage and wrecks in range, spill oil
 		// target is the wreck with the largest distance to our reaper
 		val (distance, wreck) = reaper.getObjectByDistance(wrecksInRange.map { it.target }.toList(), { it.target.waterQuantity }).last()
-
-		if (distance > 1000) {
+		// make sure the reaper is not in range of our oil
+		if (distance > RANGE_SKILL_EFFECT) {
 			return doof.getOutputForSkill(wreck)
 		}
 	}
