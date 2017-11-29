@@ -24,7 +24,6 @@ class Input(
 			unit.player == 2 -> this.enemyScore2
 			else -> this.myScore
 		}
-
 	}
 
 	companion object {

@@ -3,10 +3,11 @@
 
 n = gets.to_i # the number of temperatures to analyse
 
+# the n temperatures expressed as integers ranging from -273 to 5526
 if n.zero?
   puts 0
 else
-  temperatures = gets.chomp.split(' ').map(&:to_i) # the n temperatures expressed as integers ranging from -273 to 5526
+  temperatures = gets.chomp.split(' ').map(&:to_i) 
   closest_to_zero = 5527
 
   temperatures.each do |temp|
