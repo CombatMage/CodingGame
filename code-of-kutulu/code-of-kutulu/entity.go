@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const explorer = "EXPLORER"
 const wanderer = "WANDERER"
 
@@ -30,4 +32,8 @@ func (e entity) minionState() int {
 
 func (e entity) targetedExplorer() int {
 	return e.param2
+}
+
+func move(x, y int) {
+	fmt.Println(fmt.Sprintf("MOVE %d %d", x, y))
 }

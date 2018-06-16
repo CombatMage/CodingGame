@@ -1,11 +1,12 @@
 package main
 
-import "fmt"
-import "os"
-import "bufio"
-
-//import "strings"
-//import "strconv"
+import (
+	"bufio"
+	"fmt"
+	"math"
+	"os"
+	"strings"
+)
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -19,10 +20,45 @@ func main() {
 	scanner.Scan()
 	fmt.Sscan(scanner.Text(), &height)
 
-	for i := 0; i < height; i++ {
+	var rows []string
+	for y := 0; y < height; y++ {
 		scanner.Scan()
-		//line := scanner.Text()
+		rows = append(rows, scanner.Text())
 	}
+
+	g := graph{}
+	for y := 0; y < height-1; y++ {
+		row := strings.Split(rows[y], "")
+		for x := 0; x < width-1; x++ {
+			section := row[x]
+			nextSection := row[x+1]
+			if section != wall {
+				a := node{x: x, y: y}
+				g.addNode(a)
+				if nextSection != wall {
+					b := node{x: x + 1, y: y}
+					g.addNode(b)
+					g.addLink(a, b)
+				}
+			}
+		}
+		nextRow := strings.Split(rows[y+1], "")
+		for x := 0; x < width; x++ {
+			section := row[x]
+			nextSection := nextRow[x]
+			if section != wall {
+				a := node{x: x, y: y}
+				g.addNode(a)
+				if nextSection != wall {
+					b := node{x: x, y: y + 1}
+					g.addNode(b)
+					g.addLink(a, b)
+				}
+			}
+		}
+	}
+	debugPrintGraph(&g)
+
 	// sanityLossLonely: how much sanity you lose every turn when alone, always 3 until wood 1
 	// sanityLossGroup: how much sanity you lose every turn when near another player, always 1 until wood 1
 	// wandererSpawnTime: how many turns the wanderer take to spawn, always 3 until wood 1
@@ -61,18 +97,40 @@ func main() {
 			}
 		}
 
+		debug(fmt.Sprintf("My id is %d", myself.id))
+		debug(fmt.Sprintf("My sanity is %d", myself.sanity()))
 		debug(fmt.Sprintf("Currently %d wanderers around", len(wanderers)))
 
-		var nearest entity
-		shortestDistance := 99999.0
-		for _, e := range theOthers {
-			d := getDistance(myself, e)
-			if d < shortestDistance {
-				shortestDistance = d
-				nearest = e
-			}
+		for i, w := range wanderers {
+			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
 		}
 
-		fmt.Println(fmt.Sprintf("MOVE %d %d", nearest.x, nearest.y))
+		// calculate average distance to all spawns
+		distanceExplorerToEachSpawn := make(map[entity]float64)
+		for _, w := range wanderers {
+			for _, e := range theOthers {
+				d := math.Sqrt(getDistance(w, e))
+				distanceExplorerToEachSpawn[e] += d
+			}
+		}
+		// this explorer has the most distance to all spawns
+		explorerFarestAway := max(distanceExplorerToEachSpawn)
+		debug(fmt.Sprintf("Explorer farest away is %d", explorerFarestAway.id))
+		// move to this explorer, but make sure he is between you and the horror
+		nearestWanderer := min(<-getDistances(explorerFarestAway, wanderers))
+
+		x, y := explorerFarestAway.x, explorerFarestAway.y
+		if nearestWanderer.x < x {
+			x += -2
+		} else {
+			x -= -2
+		}
+		if nearestWanderer.y < y {
+			y += 2
+		} else {
+			y -= 2
+		}
+
+		move(x, y)
 	}
 }
