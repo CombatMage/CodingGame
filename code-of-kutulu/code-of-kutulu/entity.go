@@ -3,7 +3,7 @@ package main
 const explorer = "EXPLORER"
 const wanderer = "WANDERER"
 
-const minionSpwaning = 0
+const minionSpawning = 0
 const minionWandering = 1
 
 type entity struct {
@@ -12,20 +12,22 @@ type entity struct {
 	param0, param1, param2 int
 }
 
-/*
-Integer param0
+func (e entity) sanity() int {
+	return e.param0
+}
 
-Explorer: sanity
-Spawning minion: time before spawn
-Wanderer: time before being recalled
+func (e entity) spawningTime() int {
+	return e.param0
+}
 
-Integer param1 :
+func (e entity) recallTime() int {
+	return e.param0
+}
 
-Explorer: ignore for this league
-Minion: Current state amongst those -> SPAWNING = 0 , WANDERING = 1
+func (e entity) minionState() int {
+	return e.param1
+}
 
-Integer param2 :
-
-Explorer: ignore for this league
-Minion: id of the explorer targeted by this minion. -1 if no target (occurs only on spawn)
-*/
+func (e entity) targetedExplorer() int {
+	return e.param2
+}

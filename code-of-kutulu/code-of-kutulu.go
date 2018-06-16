@@ -1,8 +1,54 @@
 package main
 
-import "fmt"
-import "os"
-import "bufio"
+import (
+	"fmt"
+	"os"
+	"math"
+	"bufio"
+)
+
+
+func debug(msg string) {
+	fmt.Fprintln(os.Stderr, msg)
+}
+
+const explorer = "EXPLORER"
+const wanderer = "WANDERER"
+
+const minionSpawning = 0
+const minionWandering = 1
+
+type entity struct {
+	entityType             string
+	id, x, y               int
+	param0, param1, param2 int
+}
+
+func (e entity) sanity() int {
+	return e.param0
+}
+
+func (e entity) spawningTime() int {
+	return e.param0
+}
+
+func (e entity) recallTime() int {
+	return e.param0
+}
+
+func (e entity) minionState() int {
+	return e.param1
+}
+
+func (e entity) targetedExplorer() int {
+	return e.param2
+}
+
+
+func getDistance(a, b entity) float64 {
+	return math.Sqrt(math.Pow(float64(a.x-b.x), 2) + math.Pow(float64(a.y-b.y), 2))
+}
+
 
 //import "strings"
 //import "strconv"
