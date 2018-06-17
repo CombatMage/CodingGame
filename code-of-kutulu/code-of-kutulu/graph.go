@@ -29,14 +29,14 @@ func (g *graph) containsNode(n node) bool {
 }
 
 func (g *graph) addNode(a node) {
-	debug(fmt.Sprintf("Adding node %d,%d", a.x, a.y))
+	//debug(fmt.Sprintf("Adding node %d,%d", a.x, a.y))
 	if !g.containsNode(a) {
 		g.nodes = append(g.nodes, a)
 	}
 }
 
 func (g *graph) addLink(a, b node) {
-	debug(fmt.Sprintf("Adding link %d,%d->%d,%d", a.x, a.y, b.x, b.y))
+	//debug(fmt.Sprintf("Adding link %d,%d->%d,%d", a.x, a.y, b.x, b.y))
 	if !g.containsNode(a) {
 		g.nodes = append(g.nodes, a)
 	}
@@ -102,10 +102,11 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 	return previous
 }
 
-func (g *graph) shortestPathToNode(start, end node) []node {
+func (g *graph) shortestPathBetweenNode(start, end node) []node {
+	debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+
 	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
 	var path []node
-	path = append(path, end)
 	current := end
 	n, ok := shortestPathToAllNodes[current]
 	for ok {

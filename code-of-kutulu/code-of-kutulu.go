@@ -14,9 +14,13 @@ func debug(msg string) {
 	fmt.Fprintln(os.Stderr, msg)
 }
 
-func debugPrintGraph(g *graph) {
+func debugPrintGraph(g graph) {
 	str, _ := json.MarshalIndent(g, "", "  ")
 	debug(string(str))
+}
+
+func debugPrintPath(p []node) {
+	fmt.Fprintln(os.Stderr, p)
 }
 
 
@@ -81,14 +85,14 @@ func (g *graph) containsNode(n node) bool {
 }
 
 func (g *graph) addNode(a node) {
-	debug(fmt.Sprintf("Adding node %d,%d", a.x, a.y))
+	//debug(fmt.Sprintf("Adding node %d,%d", a.x, a.y))
 	if !g.containsNode(a) {
 		g.nodes = append(g.nodes, a)
 	}
 }
 
 func (g *graph) addLink(a, b node) {
-	debug(fmt.Sprintf("Adding link %d,%d->%d,%d", a.x, a.y, b.x, b.y))
+	//debug(fmt.Sprintf("Adding link %d,%d->%d,%d", a.x, a.y, b.x, b.y))
 	if !g.containsNode(a) {
 		g.nodes = append(g.nodes, a)
 	}
@@ -154,10 +158,11 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 	return previous
 }
 
-func (g *graph) shortestPathToNode(start, end node) []node {
+func (g *graph) shortestPathBetweenNode(start, end node) []node {
+	debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+
 	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
 	var path []node
-	path = append(path, end)
 	current := end
 	n, ok := shortestPathToAllNodes[current]
 	for ok {
@@ -232,7 +237,6 @@ func main() {
 			}
 		}
 	}
-	debugPrintGraph(&g)
 
 	// sanityLossLonely: how much sanity you lose every turn when alone, always 3 until wood 1
 	// sanityLossGroup: how much sanity you lose every turn when near another player, always 1 until wood 1
@@ -275,38 +279,37 @@ func main() {
 		debug(fmt.Sprintf("My id is %d", myself.id))
 		debug(fmt.Sprintf("My sanity is %d", myself.sanity()))
 		debug(fmt.Sprintf("Currently %d wanderers around", len(wanderers)))
-
 		for i, w := range wanderers {
 			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
 		}
 
-		// calculate average distance to all spawns
-		distanceExplorerToEachSpawn := make(map[entity]float64)
-		for _, w := range wanderers {
-			for _, e := range theOthers {
-				d := math.Sqrt(getDistance(w, e))
-				distanceExplorerToEachSpawn[e] += d
+		// calculate path between each other explorer
+		var paths [][]node
+		explorerCount := len(theOthers)
+		for i := 0; i < explorerCount; i++ {
+			a := node{x: theOthers[i].x, y: theOthers[i].y}
+			for t := 1; t < explorerCount; t++ {
+				b := node{x: theOthers[t].x, y: theOthers[t].y}
+				path := g.shortestPathBetweenNode(a, b)
+				paths = append(paths, path)
+				debugPrintPath(path)
 			}
 		}
-		// this explorer has the most distance to all spawns
-		explorerFarestAway := max(distanceExplorerToEachSpawn)
-		debug(fmt.Sprintf("Explorer farest away is %d", explorerFarestAway.id))
-		// move to this explorer, but make sure he is between you and the horror
-		nearestWanderer := min(<-getDistances(explorerFarestAway, wanderers))
 
-		x, y := explorerFarestAway.x, explorerFarestAway.y
-		if nearestWanderer.x < x {
-			x += -2
-		} else {
-			x -= -2
+		var myTarget node
+		distanceToTarget := 9999999
+		for _, p := range paths {
+			if len(p) > 0 {
+				pivot := p[len(p)/2]
+				a := node{x: myself.x, y: myself.y}
+				d := len(g.shortestPathBetweenNode(a, pivot))
+				if d < distanceToTarget {
+					distanceToTarget = d
+					myTarget = pivot
+				}
+			}
 		}
-		if nearestWanderer.y < y {
-			y += 2
-		} else {
-			y -= 2
-		}
-
-		move(x, y)
+		move(myTarget.x, myTarget.y)
 	}
 }
 

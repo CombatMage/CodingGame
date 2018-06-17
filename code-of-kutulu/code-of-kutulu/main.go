@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
 	"strings"
 )
@@ -57,7 +56,6 @@ func main() {
 			}
 		}
 	}
-	debugPrintGraph(&g)
 
 	// sanityLossLonely: how much sanity you lose every turn when alone, always 3 until wood 1
 	// sanityLossGroup: how much sanity you lose every turn when near another player, always 1 until wood 1
@@ -100,37 +98,36 @@ func main() {
 		debug(fmt.Sprintf("My id is %d", myself.id))
 		debug(fmt.Sprintf("My sanity is %d", myself.sanity()))
 		debug(fmt.Sprintf("Currently %d wanderers around", len(wanderers)))
-
 		for i, w := range wanderers {
 			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
 		}
 
-		// calculate average distance to all spawns
-		distanceExplorerToEachSpawn := make(map[entity]float64)
-		for _, w := range wanderers {
-			for _, e := range theOthers {
-				d := math.Sqrt(getDistance(w, e))
-				distanceExplorerToEachSpawn[e] += d
+		// calculate path between each other explorer
+		var paths [][]node
+		explorerCount := len(theOthers)
+		for i := 0; i < explorerCount; i++ {
+			a := node{x: theOthers[i].x, y: theOthers[i].y}
+			for t := 1; t < explorerCount; t++ {
+				b := node{x: theOthers[t].x, y: theOthers[t].y}
+				path := g.shortestPathBetweenNode(a, b)
+				paths = append(paths, path)
+				debugPrintPath(path)
 			}
 		}
-		// this explorer has the most distance to all spawns
-		explorerFarestAway := max(distanceExplorerToEachSpawn)
-		debug(fmt.Sprintf("Explorer farest away is %d", explorerFarestAway.id))
-		// move to this explorer, but make sure he is between you and the horror
-		nearestWanderer := min(<-getDistances(explorerFarestAway, wanderers))
 
-		x, y := explorerFarestAway.x, explorerFarestAway.y
-		if nearestWanderer.x < x {
-			x += -2
-		} else {
-			x -= -2
+		var myTarget node
+		distanceToTarget := 9999999
+		for _, p := range paths {
+			if len(p) > 0 {
+				pivot := p[len(p)/2]
+				a := node{x: myself.x, y: myself.y}
+				d := len(g.shortestPathBetweenNode(a, pivot))
+				if d < distanceToTarget {
+					distanceToTarget = d
+					myTarget = pivot
+				}
+			}
 		}
-		if nearestWanderer.y < y {
-			y += 2
-		} else {
-			y -= 2
-		}
-
-		move(x, y)
+		move(myTarget.x, myTarget.y)
 	}
 }
