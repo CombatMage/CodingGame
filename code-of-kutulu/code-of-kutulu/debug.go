@@ -18,3 +18,9 @@ func debugPrintGraph(g graph) {
 func debugPrintPath(p []node) {
 	fmt.Fprintln(os.Stderr, p)
 }
+
+func debugPrintDist(d map[node]float64) {
+	for n, d := range d {
+		debug(fmt.Sprintf("%d,%d : %f", n.x, n.y, d))
+	}
+}

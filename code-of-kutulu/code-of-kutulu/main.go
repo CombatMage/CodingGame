@@ -95,32 +95,40 @@ func main() {
 			}
 		}
 
-		debug(fmt.Sprintf("My id is %d", myself.id))
-		debug(fmt.Sprintf("My sanity is %d", myself.sanity()))
-		debug(fmt.Sprintf("Currently %d wanderers around", len(wanderers)))
-		for i, w := range wanderers {
-			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
-		}
-
 		myPos := node{x: myself.x, y: myself.y}
 		// no monsters around, move to nearest friend
 		if len(wanderers) == 0 {
+			debug("no monsters around")
 			pathToNearestExplorer := g.pathToNearestEntity(myPos, theOthers)
 			if len(pathToNearestExplorer) > 0 {
-				moveToNode(pathToNearestExplorer[len(pathToNearestExplorer)-1])
+				target := pathToNearestExplorer[len(pathToNearestExplorer)-1]
+				debug(fmt.Sprintf("move to %d,%d", target.x, target.y))
+				moveToNode(target)
 				continue
 			}
 		}
 
 		// run away
+		debug("run away")
+		pathWanderers := make(map[entity]map[node]node)
 		adjacent := g.links[myPos]
-		distanceNearestMonster := len(g.pathToNearestEntity(myPos, wanderers))
+		for _, w := range wanderers {
+			pathWanderers[w] = g.shortestPathDijkstra(node{x: w.x, y: w.y})
+		}
+
+		distanceNearestMonster := len(g.pathToNearestEntityDijkstra(myPos, pathWanderers))
+		debug(fmt.Sprintf("distance to nearest monster %d", distanceNearestMonster))
+
 		for _, neighbor := range adjacent {
-			d := len(g.pathToNearestEntity(neighbor, wanderers))
+			d := len(g.pathToNearestEntityDijkstra(neighbor, pathWanderers))
 			if d > distanceNearestMonster {
+				debug(fmt.Sprintf("move to %d,%d", neighbor.x, neighbor.y))
 				moveToNode(neighbor)
 				break
 			}
 		}
+
+		debug("wait")
+		wait()
 	}
 }

@@ -41,3 +41,7 @@ func move(x, y int) {
 func moveToNode(n node) {
 	move(n.x, n.y)
 }
+
+func wait() {
+	fmt.Println("WAIT")
+}

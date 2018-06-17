@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -73,7 +72,7 @@ func remove(nodes []node, node node) []node {
 	return nodes[:len(nodes)-1]
 }
 
-func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
+func (g *graph) shortestPathDijkstra(start node) map[node]node {
 	dist := make(map[node]float64)
 	previous := make(map[node]node)
 
@@ -84,13 +83,13 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 	dist[start] = 0
 	var toVisit []node
 	toVisit = append(toVisit, g.nodes...)
-
 	for len(toVisit) > 0 {
 		nearest := minDistanceOfNode(toVisit, dist)
 		if math.IsInf(dist[nearest], 1) {
 			break
 		}
 		toVisit = remove(toVisit, nearest)
+
 		for _, neighbor := range g.links[nearest] {
 			alt := dist[nearest] + 1
 			if alt < dist[neighbor] {
@@ -103,9 +102,8 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 }
 
 func (g *graph) shortestPathBetweenNode(start, end node) []node {
-	debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
-
-	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
+	// debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+	shortestPathToAllNodes := g.shortestPathDijkstra(start)
 	var path []node
 	current := end
 	path = append(path, end)
@@ -116,6 +114,46 @@ func (g *graph) shortestPathBetweenNode(start, end node) []node {
 		n, ok = shortestPathToAllNodes[n]
 	}
 	return path
+}
+
+func (g *graph) shortestPathBetweenNodesDijkstra(start, end node, pathFromStart map[node]node) []node {
+	// debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+	var path []node
+	current := end
+	path = append(path, end)
+	n, ok := pathFromStart[current]
+	for ok {
+		path = append(path, n)
+		current = n
+		n, ok = pathFromStart[n]
+	}
+	return path
+}
+
+func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for _, e := range entities {
+		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
+		}
+	}
+	return shortestPath
+}
+
+func (g *graph) pathToNearestEntityDijkstra(pos node, entitiesWithPath map[entity]map[node]node) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for e, paths := range entitiesWithPath {
+		p := g.shortestPathBetweenNodesDijkstra(node{x: e.x, y: e.y}, pos, paths)
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
+		}
+	}
+	return shortestPath
 }
 
 func minDistanceOfNode(nodes []node, dist map[node]float64) node {

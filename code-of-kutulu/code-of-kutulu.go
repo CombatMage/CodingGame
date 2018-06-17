@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"math"
 	"bufio"
 	"strings"
-	"encoding/json"
-	"fmt"
+	"time"
 )
 
 
@@ -21,6 +22,12 @@ func debugPrintGraph(g graph) {
 
 func debugPrintPath(p []node) {
 	fmt.Fprintln(os.Stderr, p)
+}
+
+func debugPrintDist(d map[node]float64) {
+	for n, d := range d {
+		debug(fmt.Sprintf("%d,%d : %f", n.x, n.y, d))
+	}
 }
 
 
@@ -62,6 +69,10 @@ func move(x, y int) {
 
 func moveToNode(n node) {
 	move(n.x, n.y)
+}
+
+func wait() {
+	fmt.Println("WAIT")
 }
 
 
@@ -133,7 +144,7 @@ func remove(nodes []node, node node) []node {
 	return nodes[:len(nodes)-1]
 }
 
-func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
+func (g *graph) shortestPathDijkstra(start node) map[node]node {
 	dist := make(map[node]float64)
 	previous := make(map[node]node)
 
@@ -144,13 +155,13 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 	dist[start] = 0
 	var toVisit []node
 	toVisit = append(toVisit, g.nodes...)
-
 	for len(toVisit) > 0 {
 		nearest := minDistanceOfNode(toVisit, dist)
 		if math.IsInf(dist[nearest], 1) {
 			break
 		}
 		toVisit = remove(toVisit, nearest)
+
 		for _, neighbor := range g.links[nearest] {
 			alt := dist[nearest] + 1
 			if alt < dist[neighbor] {
@@ -163,9 +174,8 @@ func (g *graph) shortestPathToNodesDijkstra(start node) map[node]node {
 }
 
 func (g *graph) shortestPathBetweenNode(start, end node) []node {
-	debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
-
-	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
+	// debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+	shortestPathToAllNodes := g.shortestPathDijkstra(start)
 	var path []node
 	current := end
 	path = append(path, end)
@@ -176,6 +186,46 @@ func (g *graph) shortestPathBetweenNode(start, end node) []node {
 		n, ok = shortestPathToAllNodes[n]
 	}
 	return path
+}
+
+func (g *graph) shortestPathBetweenNodesDijkstra(start, end node, pathFromStart map[node]node) []node {
+	// debug(fmt.Sprintf("Shortest Path for link %d,%d->%d,%d", start.x, start.y, end.x, end.y))
+	var path []node
+	current := end
+	path = append(path, end)
+	n, ok := pathFromStart[current]
+	for ok {
+		path = append(path, n)
+		current = n
+		n, ok = pathFromStart[n]
+	}
+	return path
+}
+
+func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for _, e := range entities {
+		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
+		}
+	}
+	return shortestPath
+}
+
+func (g *graph) pathToNearestEntityDijkstra(pos node, entitiesWithPath map[entity]map[node]node) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for e, paths := range entitiesWithPath {
+		p := g.shortestPathBetweenNodesDijkstra(node{x: e.x, y: e.y}, pos, paths)
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
+		}
+	}
+	return shortestPath
 }
 
 func minDistanceOfNode(nodes []node, dist map[node]float64) node {
@@ -281,50 +331,55 @@ func main() {
 			}
 		}
 
-		debug(fmt.Sprintf("My id is %d", myself.id))
-		debug(fmt.Sprintf("My sanity is %d", myself.sanity()))
-		debug(fmt.Sprintf("Currently %d wanderers around", len(wanderers)))
-		for i, w := range wanderers {
-			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
-		}
-
 		myPos := node{x: myself.x, y: myself.y}
 		// no monsters around, move to nearest friend
 		if len(wanderers) == 0 {
+			debug("no monsters around")
 			pathToNearestExplorer := g.pathToNearestEntity(myPos, theOthers)
 			if len(pathToNearestExplorer) > 0 {
-				moveToNode(pathToNearestExplorer[len(pathToNearestExplorer)-1])
+				target := pathToNearestExplorer[len(pathToNearestExplorer)-1]
+				debug(fmt.Sprintf("move to %d,%d", target.x, target.y))
+				moveToNode(target)
 				continue
 			}
 		}
 
 		// run away
+		debug("run away")
+		pathWanderers := make(map[entity]map[node]node)
 		adjacent := g.links[myPos]
-		distanceNearestMonster := len(g.pathToNearestEntity(myPos, wanderers))
+		for _, w := range wanderers {
+			pathWanderers[w] = g.shortestPathDijkstra(node{x: w.x, y: w.y})
+		}
+
+		distanceNearestMonster := len(g.pathToNearestEntityDijkstra(myPos, pathWanderers))
+		debug(fmt.Sprintf("distance to nearest monster %d", distanceNearestMonster))
+
 		for _, neighbor := range adjacent {
-			d := len(g.pathToNearestEntity(neighbor, wanderers))
+			d := len(g.pathToNearestEntityDijkstra(neighbor, pathWanderers))
 			if d > distanceNearestMonster {
+				debug(fmt.Sprintf("move to %d,%d", neighbor.x, neighbor.y))
 				moveToNode(neighbor)
 				break
 			}
 		}
+
+		debug("wait")
+		wait()
 	}
 }
 
 
 const infinity = 999999
 
-func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
-	shortestDistance := infinity
-	var shortestPath []node
-	for _, e := range entities {
-		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
-		if len(p) < shortestDistance {
-			shortestDistance = len(p)
-			shortestPath = p
+func startClock() {
+	start := time.Now()
+	go func() {
+		for {
+			elapsed := time.Since(start)
+			debug(fmt.Sprintf("elapsed %d", elapsed))
 		}
-	}
-	return shortestPath
+	}()
 }
 
 func max(a map[entity]float64) entity {

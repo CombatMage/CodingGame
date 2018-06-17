@@ -1,22 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"math"
+	"time"
 )
 
 const infinity = 999999
 
-func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
-	shortestDistance := infinity
-	var shortestPath []node
-	for _, e := range entities {
-		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
-		if len(p) < shortestDistance {
-			shortestDistance = len(p)
-			shortestPath = p
+func startClock() {
+	start := time.Now()
+	go func() {
+		for {
+			elapsed := time.Since(start)
+			debug(fmt.Sprintf("elapsed %d", elapsed))
 		}
-	}
-	return shortestPath
+	}()
 }
 
 func max(a map[entity]float64) entity {
