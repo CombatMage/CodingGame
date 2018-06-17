@@ -108,6 +108,7 @@ func (g *graph) shortestPathBetweenNode(start, end node) []node {
 	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
 	var path []node
 	current := end
+	path = append(path, end)
 	n, ok := shortestPathToAllNodes[current]
 	for ok {
 		path = append(path, n)

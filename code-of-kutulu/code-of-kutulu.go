@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"math"
 	"bufio"
 	"strings"
+	"encoding/json"
+	"fmt"
 )
 
 
@@ -58,6 +58,10 @@ func (e entity) targetedExplorer() int {
 
 func move(x, y int) {
 	fmt.Println(fmt.Sprintf("MOVE %d %d", x, y))
+}
+
+func moveToNode(n node) {
+	move(n.x, n.y)
 }
 
 
@@ -164,6 +168,7 @@ func (g *graph) shortestPathBetweenNode(start, end node) []node {
 	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
 	var path []node
 	current := end
+	path = append(path, end)
 	n, ok := shortestPathToAllNodes[current]
 	for ok {
 		path = append(path, n)
@@ -283,55 +288,43 @@ func main() {
 			debug(fmt.Sprintf("Wanderer %d targets %d", i, w.targetedExplorer()))
 		}
 
-		// calculate path between each other explorer
-		var paths [][]node
-		explorerCount := len(theOthers)
-		for i := 0; i < explorerCount; i++ {
-			a := node{x: theOthers[i].x, y: theOthers[i].y}
-			for t := 1; t < explorerCount; t++ {
-				b := node{x: theOthers[t].x, y: theOthers[t].y}
-				path := g.shortestPathBetweenNode(a, b)
-				paths = append(paths, path)
-				debugPrintPath(path)
+		myPos := node{x: myself.x, y: myself.y}
+		// no monsters around, move to nearest friend
+		if len(wanderers) == 0 {
+			pathToNearestExplorer := g.pathToNearestEntity(myPos, theOthers)
+			if len(pathToNearestExplorer) > 0 {
+				moveToNode(pathToNearestExplorer[len(pathToNearestExplorer)-1])
+				continue
 			}
 		}
 
-		var myTarget node
-		distanceToTarget := 9999999
-		for _, p := range paths {
-			if len(p) > 0 {
-				pivot := p[len(p)/2]
-				a := node{x: myself.x, y: myself.y}
-				d := len(g.shortestPathBetweenNode(a, pivot))
-				if d < distanceToTarget {
-					distanceToTarget = d
-					myTarget = pivot
-				}
+		// run away
+		adjacent := g.links[myPos]
+		distanceNearestMonster := len(g.pathToNearestEntity(myPos, wanderers))
+		for _, neighbor := range adjacent {
+			d := len(g.pathToNearestEntity(neighbor, wanderers))
+			if d > distanceNearestMonster {
+				moveToNode(neighbor)
+				break
 			}
 		}
-		move(myTarget.x, myTarget.y)
 	}
 }
 
 
-func getDistance(a, b entity) float64 {
-	return math.Sqrt(math.Pow(float64(a.x-b.x), 2) + math.Pow(float64(a.y-b.y), 2))
-}
+const infinity = 999999
 
-func getDistances(a entity, bs []entity) <-chan map[entity]float64 {
-	out := make(chan map[entity]float64)
-	go func() {
-		result := make(map[entity]float64)
-		for _, b := range bs {
-			go func() {
-				d := getDistance(a, b)
-				result[b] = d
-			}()
+func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for _, e := range entities {
+		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
 		}
-		out <- result
-	}()
-
-	return out
+	}
+	return shortestPath
 }
 
 func max(a map[entity]float64) entity {

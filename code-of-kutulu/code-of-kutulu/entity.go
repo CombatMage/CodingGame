@@ -37,3 +37,7 @@ func (e entity) targetedExplorer() int {
 func move(x, y int) {
 	fmt.Println(fmt.Sprintf("MOVE %d %d", x, y))
 }
+
+func moveToNode(n node) {
+	move(n.x, n.y)
+}

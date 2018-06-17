@@ -4,24 +4,19 @@ import (
 	"math"
 )
 
-func getDistance(a, b entity) float64 {
-	return math.Sqrt(math.Pow(float64(a.x-b.x), 2) + math.Pow(float64(a.y-b.y), 2))
-}
+const infinity = 999999
 
-func getDistances(a entity, bs []entity) <-chan map[entity]float64 {
-	out := make(chan map[entity]float64)
-	go func() {
-		result := make(map[entity]float64)
-		for _, b := range bs {
-			go func() {
-				d := getDistance(a, b)
-				result[b] = d
-			}()
+func (g *graph) pathToNearestEntity(pos node, entities []entity) []node {
+	shortestDistance := infinity
+	var shortestPath []node
+	for _, e := range entities {
+		p := g.shortestPathBetweenNode(pos, node{x: e.x, y: e.y})
+		if len(p) < shortestDistance {
+			shortestDistance = len(p)
+			shortestPath = p
 		}
-		out <- result
-	}()
-
-	return out
+	}
+	return shortestPath
 }
 
 func max(a map[entity]float64) entity {
