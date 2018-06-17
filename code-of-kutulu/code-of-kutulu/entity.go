@@ -4,6 +4,7 @@ import "fmt"
 
 const explorer = "EXPLORER"
 const wanderer = "WANDERER"
+const slasher = "SLASHER"
 
 const minionSpawning = 0
 const minionWandering = 1
@@ -44,4 +45,16 @@ func moveToNode(n node) {
 
 func wait() {
 	fmt.Println("WAIT")
+}
+
+func light() {
+	fmt.Println("LIGHT")
+}
+
+func heal() {
+	fmt.Println("PLAN")
+}
+
+func yell() {
+	fmt.Println("YELL")
 }

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"strings"
+	"time"
 	"encoding/json"
 	"fmt"
 	"os"
 	"math"
 	"bufio"
-	"strings"
-	"time"
 )
 
 
@@ -33,6 +33,7 @@ func debugPrintDist(d map[node]float64) {
 
 const explorer = "EXPLORER"
 const wanderer = "WANDERER"
+const slasher = "SLASHER"
 
 const minionSpawning = 0
 const minionWandering = 1
@@ -73,6 +74,18 @@ func moveToNode(n node) {
 
 func wait() {
 	fmt.Println("WAIT")
+}
+
+func light() {
+	fmt.Println("LIGHT")
+}
+
+func heal() {
+	fmt.Println("PLAN")
+}
+
+func yell() {
+	fmt.Println("YELL")
 }
 
 
@@ -244,6 +257,9 @@ func minDistanceOfNode(nodes []node, dist map[node]float64) node {
 
 
 func main() {
+	lightRemaining := 3
+	// healRemaining := 2
+
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 1000000), 1000000)
 
@@ -269,10 +285,8 @@ func main() {
 			nextSection := row[x+1]
 			if section != wall {
 				a := node{x: x, y: y}
-				g.addNode(a)
 				if nextSection != wall {
 					b := node{x: x + 1, y: y}
-					g.addNode(b)
 					g.addLink(a, b)
 				}
 			}
@@ -283,10 +297,8 @@ func main() {
 			nextSection := nextRow[x]
 			if section != wall {
 				a := node{x: x, y: y}
-				g.addNode(a)
 				if nextSection != wall {
 					b := node{x: x, y: y + 1}
-					g.addNode(b)
 					g.addLink(a, b)
 				}
 			}
@@ -327,45 +339,64 @@ func main() {
 			} else if newEntity.entityType == explorer {
 				theOthers = append(theOthers, newEntity)
 			} else if newEntity.entityType == wanderer {
-				wanderers = append(theOthers, newEntity)
+				wanderers = append(wanderers, newEntity)
+			} else if newEntity.entityType == slasher { // ad slasher to wanderers for the time being
+				wanderers = append(wanderers, newEntity)
 			}
 		}
 
 		myPos := node{x: myself.x, y: myself.y}
 		// no monsters around, move to nearest friend
+
 		if len(wanderers) == 0 {
-			debug("no monsters around")
 			pathToNearestExplorer := g.pathToNearestEntity(myPos, theOthers)
 			if len(pathToNearestExplorer) > 0 {
 				target := pathToNearestExplorer[len(pathToNearestExplorer)-1]
-				debug(fmt.Sprintf("move to %d,%d", target.x, target.y))
 				moveToNode(target)
 				continue
 			}
 		}
 
-		// run away
-		debug("run away")
+		actionTaken := false
 		pathWanderers := make(map[entity]map[node]node)
 		adjacent := g.links[myPos]
 		for _, w := range wanderers {
 			pathWanderers[w] = g.shortestPathDijkstra(node{x: w.x, y: w.y})
 		}
 
+		// heal to yell
 		distanceNearestMonster := len(g.pathToNearestEntityDijkstra(myPos, pathWanderers))
-		debug(fmt.Sprintf("distance to nearest monster %d", distanceNearestMonster))
+		distanceNearestExplorer := len(g.pathToNearestEntity(myPos, theOthers))
+		debug(fmt.Sprintf("nearest monster %d", distanceNearestMonster))
+		debug(fmt.Sprintf("nearest explorer %d", distanceNearestExplorer))
+		if distanceNearestMonster >= 2 && distanceNearestExplorer <= 2 {
+			yell()
+			actionTaken = true
+		} /*else if distanceNearestMonster >= 2 && healRemaining > 0 && myself.sanity() < 200 {
+			healRemaining--
+			heal()
+			actionTaken = true
+		}*/
 
+		// run away
 		for _, neighbor := range adjacent {
 			d := len(g.pathToNearestEntityDijkstra(neighbor, pathWanderers))
 			if d > distanceNearestMonster {
-				debug(fmt.Sprintf("move to %d,%d", neighbor.x, neighbor.y))
+				actionTaken = true
 				moveToNode(neighbor)
 				break
 			}
 		}
 
-		debug("wait")
-		wait()
+		// debug("wait")
+		if !actionTaken {
+			if lightRemaining > 0 && distanceNearestMonster < 6 {
+				lightRemaining--
+				light()
+			} else {
+				wait()
+			}
+		}
 	}
 }
 
