@@ -105,6 +105,19 @@ func (g *graph) shortestPathToNode(start, end node) []node {
 	return path
 }
 
+func (g *graph) shortestPathToNodeWithDijkstraGiven(start, end node, shortestPathToAllNodes map[node]node) []node {
+	var path []node
+	path = append(path, end)
+	current := end
+	n, ok := shortestPathToAllNodes[current]
+	for ok {
+		path = append(path, n)
+		current = n
+		n, ok = shortestPathToAllNodes[n]
+	}
+	return path
+}
+
 func min(nodes []node, dist map[node]float64) node {
 	var nearestNode node
 	var min float64

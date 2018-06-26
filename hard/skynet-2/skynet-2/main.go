@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"math"
 )
 
 func main() {
@@ -28,30 +26,16 @@ func main() {
 		fmt.Scan(&agent)
 		log(fmt.Sprintf("Agent is at %d", agent))
 
-		lengthOfShortestPath := math.Inf(1)
-		var shortestPath []node
-		for _, exit := range graph.exists {
-			exitPath := graph.shortestPathToNode(exit, agent)
-			if math.IsInf(lengthOfShortestPath, 1) || len(shortestPath) > len(exitPath) {
-				lengthOfShortestPath = float64(len(shortestPath))
-				shortestPath = exitPath
-			}
+		a, b := getNodeToRemove(&graph, agent)
 
-		}
-		str, _ := json.MarshalIndent(shortestPath, "", "  ")
-		log("Shortest path to exit is" + string(str) + " with length " + fmt.Sprintf("%f", lengthOfShortestPath))
-
-		exit := shortestPath[len(shortestPath)-1]
-		b := shortestPath[len(shortestPath)-2]
-
-		graph.removeLink(exit, b)
-		if len(graph.links[exit]) == 0 {
-			log(fmt.Sprintf("Node %d is severed, removing from graph", exit))
-			graph.exists = remove(graph.exists, exit)
-			graph.nodes = remove(graph.nodes, exit)
-			delete(graph.links, exit)
+		graph.removeLink(a, b)
+		if len(graph.links[a]) == 0 {
+			log(fmt.Sprintf("Node %d is severed, removing from graph", a))
+			graph.exists = remove(graph.exists, a)
+			graph.nodes = remove(graph.nodes, a)
+			delete(graph.links, a)
 		}
 
-		fmt.Println(fmt.Sprintf("%d %d", exit, b))
+		fmt.Println(fmt.Sprintf("%d %d", a, b))
 	}
 }

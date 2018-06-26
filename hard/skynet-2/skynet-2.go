@@ -1,11 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"math"
+	"fmt"
 	"os"
-	"encoding/json"
 )
+
+
+func getNodeToRemove(g *graph, agent node) (a, b node) {
+	lengthOfShortestPath := math.Inf(1)
+	var shortestPath []node
+	for _, exit := range g.exists {
+		exitPath := g.shortestPathToNode(exit, agent)
+		if math.IsInf(lengthOfShortestPath, 1) || len(shortestPath) > len(exitPath) {
+			lengthOfShortestPath = float64(len(shortestPath))
+			shortestPath = exitPath
+		}
+
+	}
+	a = shortestPath[len(shortestPath)-1]
+	b = shortestPath[len(shortestPath)-2]
+	return a, b
+}
+
 
 
 type node int
@@ -108,6 +125,19 @@ func (g *graph) shortestPathToNode(start, end node) []node {
 	return path
 }
 
+func (g *graph) shortestPathToNodeWithDijkstraGiven(start, end node, shortestPathToAllNodes map[node]node) []node {
+	var path []node
+	path = append(path, end)
+	current := end
+	n, ok := shortestPathToAllNodes[current]
+	for ok {
+		path = append(path, n)
+		current = n
+		n, ok = shortestPathToAllNodes[n]
+	}
+	return path
+}
+
 func min(nodes []node, dist map[node]float64) node {
 	var nearestNode node
 	var min float64
@@ -150,30 +180,50 @@ func main() {
 		fmt.Scan(&agent)
 		log(fmt.Sprintf("Agent is at %d", agent))
 
-		lengthOfShortestPath := math.Inf(1)
-		var shortestPath []node
-		for _, exit := range graph.exists {
-			exitPath := graph.shortestPathToNode(exit, agent)
-			if math.IsInf(lengthOfShortestPath, 1) || len(shortestPath) > len(exitPath) {
-				lengthOfShortestPath = float64(len(shortestPath))
-				shortestPath = exitPath
-			}
+		a, b := getNodeToRemove(&graph, agent)
 
-		}
-		str, _ := json.MarshalIndent(shortestPath, "", "  ")
-		log("Shortest path to exit is" + string(str) + " with length " + fmt.Sprintf("%f", lengthOfShortestPath))
-
-		exit := shortestPath[len(shortestPath)-1]
-		b := shortestPath[len(shortestPath)-2]
-
-		graph.removeLink(exit, b)
-		if len(graph.links[exit]) == 0 {
-			log(fmt.Sprintf("Node %d is severed, removing from graph", exit))
-			graph.exists = remove(graph.exists, exit)
-			graph.nodes = remove(graph.nodes, exit)
-			delete(graph.links, exit)
+		graph.removeLink(a, b)
+		if len(graph.links[a]) == 0 {
+			log(fmt.Sprintf("Node %d is severed, removing from graph", a))
+			graph.exists = remove(graph.exists, a)
+			graph.nodes = remove(graph.nodes, a)
+			delete(graph.links, a)
 		}
 
-		fmt.Println(fmt.Sprintf("%d %d", exit, b))
+		fmt.Println(fmt.Sprintf("%d %d", a, b))
 	}
+}
+
+
+// getScoreOfSituation evaluates the given game situation and returns a score.
+// Larger values are better.
+func getScoreOfSituation(g *graph, exits []node, agentPosition node) float64 {
+	var reachableExits []node
+	for _, node := range exits {
+		if _, ok := g.links[node]; ok {
+			reachableExits = append(reachableExits, node)
+		}
+	}
+
+	distanceToExit := calculateDistanceToNodes(g, agentPosition, reachableExits)
+	longestPath := len(g.nodes) - 1
+
+	squareSum := 0.0
+	for _, d := range distanceToExit {
+		squareSum += math.Pow(float64(longestPath-d), 2.0)
+	}
+	squareSum /= float64(len(exits))
+	squareSum = math.Sqrt(squareSum)
+
+	return squareSum
+}
+
+func calculateDistanceToNodes(g *graph, start node, targetList []node) map[node]int {
+	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
+	result := make(map[node]int)
+	for _, target := range targetList {
+		path := g.shortestPathToNodeWithDijkstraGiven(start, target, shortestPathToAllNodes)
+		result[target] = len(path)
+	}
+	return result
 }
