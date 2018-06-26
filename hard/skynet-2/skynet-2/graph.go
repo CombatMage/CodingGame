@@ -105,6 +105,8 @@ func (g *graph) shortestPathToNode(start, end node) []node {
 	return path
 }
 
+// shortestPathToNodeWithDijkstraGiven returns the shortest path from start and end.
+// The end node is included in result, but start is not.
 func (g *graph) shortestPathToNodeWithDijkstraGiven(start, end node, shortestPathToAllNodes map[node]node) []node {
 	var path []node
 	path = append(path, end)
