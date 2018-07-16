@@ -18,18 +18,3 @@ func getNodeToRemove(g *graph, agent node) (a, b node) {
 	b = shortestPath[len(shortestPath)-2]
 	return a, b
 }
-
-func getNextNodeOfAgent(g *graph, agent node) node {
-	pathToAllNodes := g.shortestPathToNodesDijkstra(agent)
-	lengthOfShortestPath := math.Inf(1)
-	var shortestPath []node
-	for _, exit := range g.exists {
-		exitPath := g.shortestPathToNodeWithDijkstraGiven(exit, agent, pathToAllNodes)
-		if math.IsInf(lengthOfShortestPath, 1) || len(shortestPath) > len(exitPath) {
-			lengthOfShortestPath = float64(len(shortestPath))
-			shortestPath = exitPath
-		}
-
-	}
-	return shortestPath[0]
-}

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"os"
 	"math"
 	"fmt"
-	"os"
 )
 
 
@@ -16,13 +16,11 @@ func getNodeToRemove(g *graph, agent node) (a, b node) {
 			lengthOfShortestPath = float64(len(shortestPath))
 			shortestPath = exitPath
 		}
-
 	}
 	a = shortestPath[len(shortestPath)-1]
 	b = shortestPath[len(shortestPath)-2]
 	return a, b
 }
-
 
 
 type node int
@@ -125,6 +123,8 @@ func (g *graph) shortestPathToNode(start, end node) []node {
 	return path
 }
 
+// shortestPathToNodeWithDijkstraGiven returns the shortest path from start and end.
+// The end node is included in result, but start is not.
 func (g *graph) shortestPathToNodeWithDijkstraGiven(start, end node, shortestPathToAllNodes map[node]node) []node {
 	var path []node
 	path = append(path, end)
@@ -192,38 +192,4 @@ func main() {
 
 		fmt.Println(fmt.Sprintf("%d %d", a, b))
 	}
-}
-
-
-// getScoreOfSituation evaluates the given game situation and returns a score.
-// Larger values are better.
-func getScoreOfSituation(g *graph, exits []node, agentPosition node) float64 {
-	var reachableExits []node
-	for _, node := range exits {
-		if _, ok := g.links[node]; ok {
-			reachableExits = append(reachableExits, node)
-		}
-	}
-
-	distanceToExit := calculateDistanceToNodes(g, agentPosition, reachableExits)
-	longestPath := len(g.nodes) - 1
-
-	squareSum := 0.0
-	for _, d := range distanceToExit {
-		squareSum += math.Pow(float64(longestPath-d), 2.0)
-	}
-	squareSum /= float64(len(exits))
-	squareSum = math.Sqrt(squareSum)
-
-	return squareSum
-}
-
-func calculateDistanceToNodes(g *graph, start node, targetList []node) map[node]int {
-	shortestPathToAllNodes := g.shortestPathToNodesDijkstra(start)
-	result := make(map[node]int)
-	for _, target := range targetList {
-		path := g.shortestPathToNodeWithDijkstraGiven(start, target, shortestPathToAllNodes)
-		result[target] = len(path)
-	}
-	return result
 }
