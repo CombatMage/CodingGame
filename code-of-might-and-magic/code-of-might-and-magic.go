@@ -21,6 +21,40 @@ func filter(cards []creature, test func(creature) bool) (ret []creature) {
 	return
 }
 
+func weakest(cards []creature) (int, creature) {
+	weakestCard := creature{
+		attack:  9999,
+		defense: 9999,
+	}
+	index := -1
+
+	for i, card := range cards {
+		if (card.attack + card.defense) <= (weakestCard.attack + weakestCard.defense) {
+			weakestCard = card
+			index = i
+		}
+	}
+
+	return index, weakestCard
+}
+
+func strongest(cards []creature) (int, creature) {
+	strongestCard := creature{
+		attack:  0,
+		defense: 0,
+	}
+	index := -1
+
+	for i, card := range cards {
+		if (card.attack + card.defense) >= (strongestCard.attack + strongestCard.defense) {
+			strongestCard = card
+			index = i
+		}
+	}
+
+	return index, strongestCard
+}
+
 var targetManaCurve = map[int]int{
 	0: 1,
 	1: 10,
@@ -76,7 +110,6 @@ func selectCardsToSummon(mana int, hand []creature) []creature {
 
 	return toSummon
 }
-
 
 func main() {
 	deck := deck{
@@ -156,11 +189,38 @@ func main() {
 		toSummon := selectCardsToSummon(myself.mana, cardsInMyHand)
 		debug("have %d cards to summon", len(toSummon))
 
-		for _, card := range toSummon {
-			summon(card)
-		}
+		/*
+			for len(cardsOnMySide)+len(toSummon) > 6 && len(cardsOnEnemySide) > 0 {
+				debug("clear my board")
+				a, myCard := weakest(cardsOnMySide)
+				b, enemyCard := strongest(cardsOnEnemySide)
+
+				attack(myCard, enemyCard.instanceID)
+				debug("attack %d with %d", enemyCard, myCard)
+
+				// calculate result
+				if enemyCard.attack >= myCard.defense {
+					// remove my card
+					cardsOnMySide = append(cardsOnMySide[:a], cardsOnMySide[a+1:]...)
+				} else if myCard.attack >= enemyCard.defense {
+					// remove enemy card
+					cardsOnEnemySide = append(cardsOnEnemySide[:b], cardsOnMySide[b+1:]...)
+				} else {
+					myCard.defense -= enemyCard.attack
+					enemyCard.defense -= myCard.attack
+				}
+			}*/
+
 		for _, card := range cardsOnMySide {
 			attack(card, -1)
+		}
+		for _, card := range toSummon {
+			if len(cardsOnMySide) <= 6 {
+				summon(card)
+				cardsOnMySide = append(cardsOnMySide, card)
+			} else {
+				break
+			}
 		}
 
 		fmt.Println("")
@@ -171,7 +231,6 @@ type player struct {
 	health int
 	mana   int
 }
-
 
 func debug(message string, a ...interface{}) {
 	fmt.Fprintln(os.Stderr, fmt.Sprintf(message, a...))

@@ -80,11 +80,38 @@ func main() {
 		toSummon := selectCardsToSummon(myself.mana, cardsInMyHand)
 		debug("have %d cards to summon", len(toSummon))
 
-		for _, card := range toSummon {
-			summon(card)
-		}
+		/*
+			for len(cardsOnMySide)+len(toSummon) > 6 && len(cardsOnEnemySide) > 0 {
+				debug("clear my board")
+				a, myCard := weakest(cardsOnMySide)
+				b, enemyCard := strongest(cardsOnEnemySide)
+
+				attack(myCard, enemyCard.instanceID)
+				debug("attack %d with %d", enemyCard, myCard)
+
+				// calculate result
+				if enemyCard.attack >= myCard.defense {
+					// remove my card
+					cardsOnMySide = append(cardsOnMySide[:a], cardsOnMySide[a+1:]...)
+				} else if myCard.attack >= enemyCard.defense {
+					// remove enemy card
+					cardsOnEnemySide = append(cardsOnEnemySide[:b], cardsOnMySide[b+1:]...)
+				} else {
+					myCard.defense -= enemyCard.attack
+					enemyCard.defense -= myCard.attack
+				}
+			}*/
+
 		for _, card := range cardsOnMySide {
 			attack(card, -1)
+		}
+		for _, card := range toSummon {
+			if len(cardsOnMySide) <= 6 {
+				summon(card)
+				cardsOnMySide = append(cardsOnMySide, card)
+			} else {
+				break
+			}
 		}
 
 		fmt.Println("")
