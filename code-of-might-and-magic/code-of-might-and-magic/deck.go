@@ -36,3 +36,22 @@ func selectCardForDeck(cards []creature, deck *deck) int {
 	deck.add(cards[0])
 	return 0
 }
+
+func selectCardsToSummon(mana int, hand []creature) []creature {
+	var toSummon []creature
+
+	enoughMana := filter(hand, func(card creature) bool {
+		return card.cost <= mana
+	})
+	for len(enoughMana) > 0 {
+		toSummon = append(toSummon, enoughMana[0])
+		mana -= enoughMana[0].cost
+		hand = append(hand[:0], hand[1:]...)
+
+		enoughMana = filter(hand, func(card creature) bool {
+			return card.cost <= mana
+		})
+	}
+
+	return toSummon
+}

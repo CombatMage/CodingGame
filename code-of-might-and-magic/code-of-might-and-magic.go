@@ -6,9 +6,19 @@ import (
 )
 
 type creature struct {
-	cost    int
-	attack  int
-	defense int
+	instanceID int
+	cost       int
+	attack     int
+	defense    int
+}
+
+func filter(cards []creature, test func(creature) bool) (ret []creature) {
+	for _, s := range cards {
+		if test(s) {
+			ret = append(ret, s)
+		}
+	}
+	return
 }
 
 var targetManaCurve = map[int]int{
@@ -48,8 +58,25 @@ func selectCardForDeck(cards []creature, deck *deck) int {
 	return 0
 }
 
+func selectCardsToSummon(mana int, hand []creature) []creature {
+	var toSummon []creature
 
-//import "os"
+	enoughMana := filter(hand, func(card creature) bool {
+		return card.cost <= mana
+	})
+	for len(enoughMana) > 0 {
+		toSummon = append(toSummon, enoughMana[0])
+		mana -= enoughMana[0].cost
+		hand = append(hand[:0], hand[1:]...)
+
+		enoughMana = filter(hand, func(card creature) bool {
+			return card.cost <= mana
+		})
+	}
+
+	return toSummon
+}
+
 
 func main() {
 	deck := deck{
@@ -74,9 +101,10 @@ func main() {
 			var myHealthChange, opponentHealthChange, cardDraw int
 			fmt.Scan(&cardNumber, &instanceID, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
 			cards = append(cards, creature{
-				cost:    cost,
-				attack:  attack,
-				defense: defense,
+				instanceID: instanceID,
+				cost:       cost,
+				attack:     attack,
+				defense:    defense,
 			})
 		}
 		selectedCard := selectCardForDeck(cards, &deck)
@@ -86,33 +114,77 @@ func main() {
 	for round := 0; ; round++ {
 		debug("battle phase round %d", round)
 
-		for i := 0; i < 2; i++ {
-			var playerHealth, playerMana, playerDeck, playerRune int
-			fmt.Scan(&playerHealth, &playerMana, &playerDeck, &playerRune)
-		}
+		myself := player{}
+		enemy := player{}
+
+		var playerDeck, playerRune int
+		fmt.Scan(&myself.health, &myself.mana, &playerDeck, &playerRune)
+		fmt.Scan(&enemy.health, &enemy.mana, &playerDeck, &playerRune)
+		debug("SELF : health:%d, mana:%d", myself.health, myself.mana)
+		debug("ENEMY: health:%d, mana:%d", enemy.health, enemy.mana)
+
 		var opponentHand int
 		fmt.Scan(&opponentHand)
 
 		var cardCount int
 		fmt.Scan(&cardCount)
 
+		var cardsInMyHand []creature
+		var cardsOnMySide []creature
+		var cardsOnEnemySide []creature
 		for i := 0; i < cardCount; i++ {
-			var cardNumber, instanceId, location, cardType, cost, attack, defense int
+			var cardNumber, instanceID, location, cardType, cost, attack, defense int
 			var abilities string
 			var myHealthChange, opponentHealthChange, cardDraw int
-			fmt.Scan(&cardNumber, &instanceId, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
+			fmt.Scan(&cardNumber, &instanceID, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
+			card := creature{
+				instanceID: instanceID,
+				cost:       cost,
+				attack:     attack,
+				defense:    defense,
+			}
+			switch location {
+			case 0:
+				cardsInMyHand = append(cardsInMyHand, card)
+			case 1:
+				cardsOnMySide = append(cardsOnMySide, card)
+			case -1:
+				cardsOnEnemySide = append(cardsOnEnemySide, card)
+			}
 		}
 
-		// fmt.Fprintln(os.Stderr, "Debug messages...")
-		fmt.Println("PASS") // Write action to stdout
+		toSummon := selectCardsToSummon(myself.mana, cardsInMyHand)
+		debug("have %d cards to summon", len(toSummon))
+
+		for _, card := range toSummon {
+			summon(card)
+		}
+		for _, card := range cardsOnMySide {
+			attack(card, -1)
+		}
+
+		fmt.Println("")
 	}
+}
+
+type player struct {
+	health int
+	mana   int
 }
 
 
 func debug(message string, a ...interface{}) {
-	fmt.Fprintln(os.Stderr, fmt.Sprintf(message, a))
+	fmt.Fprintln(os.Stderr, fmt.Sprintf(message, a...))
 }
 
 func pick(index int) {
 	fmt.Println(fmt.Sprintf("PICK %d", index))
+}
+
+func summon(card creature) {
+	fmt.Print(fmt.Sprintf("SUMMON %d;", card.instanceID))
+}
+
+func attack(card creature, target int) {
+	fmt.Print(fmt.Sprintf("ATTACK %d %d;", card.instanceID, target))
 }

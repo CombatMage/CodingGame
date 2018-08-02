@@ -2,8 +2,6 @@ package main
 
 import "fmt"
 
-//import "os"
-
 func main() {
 	deck := deck{
 		manaCurve: make(map[int]int),
@@ -27,9 +25,10 @@ func main() {
 			var myHealthChange, opponentHealthChange, cardDraw int
 			fmt.Scan(&cardNumber, &instanceID, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
 			cards = append(cards, creature{
-				cost:    cost,
-				attack:  attack,
-				defense: defense,
+				instanceID: instanceID,
+				cost:       cost,
+				attack:     attack,
+				defense:    defense,
 			})
 		}
 		selectedCard := selectCardForDeck(cards, &deck)
@@ -39,24 +38,55 @@ func main() {
 	for round := 0; ; round++ {
 		debug("battle phase round %d", round)
 
-		for i := 0; i < 2; i++ {
-			var playerHealth, playerMana, playerDeck, playerRune int
-			fmt.Scan(&playerHealth, &playerMana, &playerDeck, &playerRune)
-		}
+		myself := player{}
+		enemy := player{}
+
+		var playerDeck, playerRune int
+		fmt.Scan(&myself.health, &myself.mana, &playerDeck, &playerRune)
+		fmt.Scan(&enemy.health, &enemy.mana, &playerDeck, &playerRune)
+		debug("SELF : health:%d, mana:%d", myself.health, myself.mana)
+		debug("ENEMY: health:%d, mana:%d", enemy.health, enemy.mana)
+
 		var opponentHand int
 		fmt.Scan(&opponentHand)
 
 		var cardCount int
 		fmt.Scan(&cardCount)
 
+		var cardsInMyHand []creature
+		var cardsOnMySide []creature
+		var cardsOnEnemySide []creature
 		for i := 0; i < cardCount; i++ {
-			var cardNumber, instanceId, location, cardType, cost, attack, defense int
+			var cardNumber, instanceID, location, cardType, cost, attack, defense int
 			var abilities string
 			var myHealthChange, opponentHealthChange, cardDraw int
-			fmt.Scan(&cardNumber, &instanceId, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
+			fmt.Scan(&cardNumber, &instanceID, &location, &cardType, &cost, &attack, &defense, &abilities, &myHealthChange, &opponentHealthChange, &cardDraw)
+			card := creature{
+				instanceID: instanceID,
+				cost:       cost,
+				attack:     attack,
+				defense:    defense,
+			}
+			switch location {
+			case 0:
+				cardsInMyHand = append(cardsInMyHand, card)
+			case 1:
+				cardsOnMySide = append(cardsOnMySide, card)
+			case -1:
+				cardsOnEnemySide = append(cardsOnEnemySide, card)
+			}
 		}
 
-		// fmt.Fprintln(os.Stderr, "Debug messages...")
-		fmt.Println("PASS") // Write action to stdout
+		toSummon := selectCardsToSummon(myself.mana, cardsInMyHand)
+		debug("have %d cards to summon", len(toSummon))
+
+		for _, card := range toSummon {
+			summon(card)
+		}
+		for _, card := range cardsOnMySide {
+			attack(card, -1)
+		}
+
+		fmt.Println("")
 	}
 }
