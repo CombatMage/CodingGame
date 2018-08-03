@@ -3,6 +3,7 @@ import java.util.*
 data class Card(
 		val instanceID: Int,
 		val location: Int,
+		val cardType: Int,
 		val cost: Int,
 		val attack: Int,
 		var defense: Int,
@@ -10,6 +11,8 @@ data class Card(
 
 		var hasAttacked: Boolean
 ) {
+
+	val isCreature: Boolean get() = this.cardType == 0
 
 	val hasGuard: Boolean get() = this.abilities.contains("G", true)
 	val hasCharge: Boolean get() = this.abilities.contains("C", true)
@@ -28,7 +31,7 @@ data class Card(
 			val myHealthChange = input.nextInt()
 			val opponentHealthChange = input.nextInt()
 			val cardDraw = input.nextInt()
-			return Card(instanceId, location, cost, attack, defense, abilities, false)
+			return Card(instanceId, location, cardType, cost, attack, defense, abilities, false)
 		}
 	}
 
