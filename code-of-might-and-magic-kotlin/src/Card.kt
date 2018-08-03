@@ -6,8 +6,14 @@ data class Card(
 		val cost: Int,
 		val attack: Int,
 		val defense: Int,
-		val abilities: String
+		val abilities: String,
+
+		var hasAttacked: Boolean
 ) {
+
+	val hasGuard: Boolean get() = this.abilities.contains("G", true)
+	val hasCharge: Boolean get() = this.abilities.contains("C", true)
+	val hasBreakthrough: Boolean get() = this.abilities.contains("B", true)
 
 	companion object {
 		fun fromScanner(input: Scanner): Card {
@@ -22,7 +28,7 @@ data class Card(
 			val myHealthChange = input.nextInt()
 			val opponentHealthChange = input.nextInt()
 			val cardDraw = input.nextInt()
-			return Card(instanceId, location, cost, attack, defense, abilities)
+			return Card(instanceId, location, cost, attack, defense, abilities, false)
 		}
 	}
 

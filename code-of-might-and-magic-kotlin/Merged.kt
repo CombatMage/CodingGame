@@ -1,5 +1,5 @@
-import java.util.*
 import kotlin.collections.ArrayList
+import java.util.*
 
 
 
@@ -9,8 +9,14 @@ data class Card(
 		val cost: Int,
 		val attack: Int,
 		val defense: Int,
-		val abilities: String
+		val abilities: String,
+
+		var hasAttacked: Boolean
 ) {
+
+	val hasGuard: Boolean get() = this.abilities.contains("G", true)
+	val hasCharge: Boolean get() = this.abilities.contains("C", true)
+	val hasBreakthrough: Boolean get() = this.abilities.contains("B", true)
 
 	companion object {
 		fun fromScanner(input: Scanner): Card {
@@ -25,7 +31,7 @@ data class Card(
 			val myHealthChange = input.nextInt()
 			val opponentHealthChange = input.nextInt()
 			val cardDraw = input.nextInt()
-			return Card(instanceId, location, cost, attack, defense, abilities)
+			return Card(instanceId, location, cost, attack, defense, abilities, false)
 		}
 	}
 
@@ -43,6 +49,8 @@ val TARGET_MANA_CURVE: Map<Int, Int> = hashMapOf(
 const val MY_HAND = 0
 const val MY_SIDE = 1
 const val ENEMY_SIDE = -1
+
+const val MAX_SIDE_LIMIT = 6
 
 class Deck{
 	val cards = ArrayList<Card>()
@@ -90,15 +98,33 @@ fun main(args : Array<String>) {
 			debug("battle phase round $round")
 			val cardsInPlay = ArrayList<Card>()
 			for (i in 0 until cardCount) { cardsInPlay.add(Card.fromScanner(input)) }
-			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }
-			val mySide = cardsInPlay.filter { it.location == MY_SIDE }
+			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }.toMutableList()
+			val mySide = cardsInPlay.filter { it.location == MY_SIDE }.toMutableList()
 			val enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }
 
 			var command = ""
 
-			val toSummon = mySelf.getCardsToSummon(myHand)
-			toSummon.forEach { card ->
+			val toSummon = mySelf.getCardsToSummon(myHand).toMutableList()
+
+			val guards = enemySide.filter { it.hasGuard }
+			if (guards.isNotEmpty()) {
+				// if enemy has guard => attack until dead
+			}
+			if (mySide.size + toSummon.size > MAX_SIDE_LIMIT) {
+				// mySide + toSummon > MAX_SIDE_LIMIT => attack strongest enemy with weakest monster
+			}
+
+			val remainingAttacker = myHand.filter { !it.hasAttacked }
+			remainingAttacker.forEach { card ->
+				command += attack(card, ENEMY_SIDE) + ";"
+				card.hasAttacked = true
+			}
+
+			while (mySide.size < MAX_SIDE_LIMIT && toSummon.isNotEmpty()) {
+				val card = toSummon.removeAt(0)
 				command += summon(card) + ";"
+				mySide.add(card)
+				myHand.remove(card)
 			}
 
 			if (command.isBlank()) {
@@ -146,6 +172,10 @@ fun debug(message: String) {
 
 fun pick(index: Int) {
 	println("PICK $index")
+}
+
+fun attack(card: Card, target: Int): String {
+	return "ATTACK ${card.instanceID} $target"
 }
 
 fun summon(card: Card): String {

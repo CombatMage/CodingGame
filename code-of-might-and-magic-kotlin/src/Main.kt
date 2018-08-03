@@ -25,23 +25,33 @@ fun main(args : Array<String>) {
 			debug("battle phase round $round")
 			val cardsInPlay = ArrayList<Card>()
 			for (i in 0 until cardCount) { cardsInPlay.add(Card.fromScanner(input)) }
-			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }
-			val mySide = cardsInPlay.filter { it.location == MY_SIDE }
+			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }.toMutableList()
+			val mySide = cardsInPlay.filter { it.location == MY_SIDE }.toMutableList()
 			val enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }
 
 			var command = ""
 
-			val toSummon = mySelf.getCardsToSummon(myHand)
+			val toSummon = mySelf.getCardsToSummon(myHand).toMutableList()
 
-			// if enemy has guard => attack until dead
+			val guards = enemySide.filter { it.hasGuard }
+			if (guards.isNotEmpty()) {
+				// if enemy has guard => attack until dead
+			}
+			if (mySide.size + toSummon.size > MAX_SIDE_LIMIT) {
+				// mySide + toSummon > MAX_SIDE_LIMIT => attack strongest enemy with weakest monster
+			}
 
-			// else if mySide + toSummon > MAX_SIDE_LIMIT => attack strongest enemy with weakest monster
-			
-			// else attack enemy player
+			val remainingAttacker = myHand.filter { !it.hasAttacked }
+			remainingAttacker.forEach { card ->
+				command += attack(card, ENEMY_SIDE) + ";"
+				card.hasAttacked = true
+			}
 
-
-			toSummon.forEach { card ->
+			while (mySide.size < MAX_SIDE_LIMIT && toSummon.isNotEmpty()) {
+				val card = toSummon.removeAt(0)
 				command += summon(card) + ";"
+				mySide.add(card)
+				myHand.remove(card)
 			}
 
 			if (command.isBlank()) {
