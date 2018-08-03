@@ -8,7 +8,7 @@ data class Card(
 		val location: Int,
 		val cost: Int,
 		val attack: Int,
-		val defense: Int,
+		var defense: Int,
 		val abilities: String,
 
 		var hasAttacked: Boolean
@@ -100,24 +100,39 @@ fun main(args : Array<String>) {
 			for (i in 0 until cardCount) { cardsInPlay.add(Card.fromScanner(input)) }
 			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }.toMutableList()
 			val mySide = cardsInPlay.filter { it.location == MY_SIDE }.toMutableList()
-			val enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }
+			val enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }.toMutableList()
 
 			var command = ""
 
 			val toSummon = mySelf.getCardsToSummon(myHand).toMutableList()
 
-			val guards = enemySide.filter { it.hasGuard }
-			if (guards.isNotEmpty()) {
-				// if enemy has guard => attack until dead
+			while (enemySide.guards().isNotEmpty() && mySide.attacker().isNotEmpty()) {
+				val guard = enemySide.guards().first()
+				val attacker = mySide.attacker().sortedBy { it.attack }.first()
+
+				command += attack(attacker, guard.instanceID) + ";"
+				attacker.hasAttacked = true
+
+				guard.defense -= attacker.attack
+				attacker.defense -= guard.attack
+
+				if (guard.defense <= 0) {
+					enemySide.remove(guard)
+				}
+				if (attacker.defense <= 0) {
+					mySide.remove(attacker)
+				}
 			}
+
 			if (mySide.size + toSummon.size > MAX_SIDE_LIMIT) {
 				// mySide + toSummon > MAX_SIDE_LIMIT => attack strongest enemy with weakest monster
 			}
 
-			val remainingAttacker = myHand.filter { !it.hasAttacked }
-			remainingAttacker.forEach { card ->
-				command += attack(card, ENEMY_SIDE) + ";"
-				card.hasAttacked = true
+			if (enemySide.guards().isEmpty()) {
+				mySide.attacker().forEach { card ->
+					command += attack(card, ENEMY_SIDE) + ";"
+					card.hasAttacked = true
+				}
 			}
 
 			while (mySide.size < MAX_SIDE_LIMIT && toSummon.isNotEmpty()) {
@@ -135,6 +150,15 @@ fun main(args : Array<String>) {
 		}
 	}
 }
+
+fun List<Card>.attacker(): List<Card> {
+	return this.filter { !it.hasAttacked }
+}
+
+fun List<Card>.guards(): List<Card> {
+	return this.filter { it.hasGuard }
+}
+
 
 data class Player (
 		var health: Int,

@@ -5,7 +5,7 @@ data class Card(
 		val location: Int,
 		val cost: Int,
 		val attack: Int,
-		val defense: Int,
+		var defense: Int,
 		val abilities: String,
 
 		var hasAttacked: Boolean
