@@ -12,7 +12,7 @@ fun main(args : Array<String>) {
 		debug("Myself: $mySelf")
 		debug("Enemy: $enemy")
 
-		val opponentHand = input.nextInt()
+		input.nextInt() // opponentHand
 		val cardCount = input.nextInt()
 
 		if (round < 30) {
@@ -31,8 +31,8 @@ fun main(args : Array<String>) {
 
 			var command = ""
 
-			val toSummon = mySelf.getCardsToSummon(myHand).creatures().toMutableList()
-			val toUse = mySelf.getCardsToSummon(myHand).items().toMutableList()
+			val toSummon = mySelf.getCardsToPlay(myHand).creatures().toMutableList()
+			val toUse = mySelf.getCardsToPlay(myHand).items().toMutableList()
 
 			// first attack phase, try to kill guards
 			val attackResult = performAttack(mySide.attacker(), mySide, enemySide)

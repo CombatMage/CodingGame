@@ -6,18 +6,18 @@ data class Player (
 		val playerDeck: Int,
 		val playerRune: Int
 ) {
-	fun getCardsToSummon(cardsInHand: List<Card>): List<Card> {
-		val toSummon = ArrayList<Card>()
+	fun getCardsToPlay(cardsInHand: List<Card>): List<Card> {
+		val toPlay = ArrayList<Card>()
 		val cards = cardsInHand.toMutableList()
 
 		var enoughMana = cards.filter { it.cost <= this.mana }
 		while (enoughMana.isNotEmpty()) {
-			toSummon.add(enoughMana[0])
+			toPlay.add(enoughMana[0])
 			this.mana -= enoughMana[0].cost
 			cards.remove(enoughMana[0])
 			enoughMana = cards.filter { it.cost <= this.mana }
 		}
-		return toSummon
+		return toPlay
 	}
 
 	companion object {
