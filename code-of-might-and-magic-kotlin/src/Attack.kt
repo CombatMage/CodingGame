@@ -33,3 +33,14 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 
 	return AttackResult(enemySideResult, mySideResult, command)
 }
+
+fun performAttackEnemyPlayer(attacker: List<Card>, enemySide: List<Card>): String {
+	var command = ""
+	if (enemySide.guards().isEmpty()) {
+		attacker.forEach { card ->
+			command += attack(card, ENEMY_SIDE) + ";"
+			card.hasAttacked = true
+		}
+	}
+	return command
+}

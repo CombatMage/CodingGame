@@ -190,7 +190,6 @@ fun main(args : Array<String>) {
 				}
 			}
 
-
 			if (command.isBlank()) {
 				println("PASS")
 			} else {

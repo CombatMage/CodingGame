@@ -46,12 +46,7 @@ fun main(args : Array<String>) {
 			}
 
 			// attack enemy player
-			if (enemySide.guards().isEmpty()) {
-				mySide.attacker().forEach { card ->
-					command += attack(card, ENEMY_SIDE) + ";"
-					card.hasAttacked = true
-				}
-			}
+			command += performAttackEnemyPlayer(mySide.attacker(), enemySide)
 
 			// summon new creatures
 			while (mySide.size < MAX_SIDE_LIMIT && toSummon.isNotEmpty()) {
@@ -68,13 +63,7 @@ fun main(args : Array<String>) {
 			command += chargeAttackResult.command
 
 			// attack enemy player
-			if (enemySide.guards().isEmpty()) {
-				mySide.chargingAttacker().forEach { card ->
-					command += attack(card, ENEMY_SIDE) + ";"
-					card.hasAttacked = true
-				}
-			}
-
+			command += performAttackEnemyPlayer(mySide.chargingAttacker(), enemySide)
 
 			if (command.isBlank()) {
 				println("PASS")
