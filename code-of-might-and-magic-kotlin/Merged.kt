@@ -1,5 +1,5 @@
-import kotlin.collections.ArrayList
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 data class AttackResult(
@@ -12,15 +12,17 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 	if (attacker.find { it.hasAttacked } != null) throw IllegalArgumentException("invalid attacker given")
 
 	var command = ""
+	val attackerTmp = attacker.toMutableList()
 	val mySideResult = mySide.toMutableList()
 	val enemySideResult = enemySide.toMutableList()
 
-	while (enemySide.guards().isNotEmpty() && attacker.isNotEmpty()) {
+	while (enemySide.guards().isNotEmpty() && attackerTmp.isNotEmpty()) {
 		val guard = enemySide.guards().first()
-		val attackingCard = attacker.sortedByDescending { it.attack }.first()
+		val attackingCard = attackerTmp.sortedByDescending { it.attack }.first()
 
 		command += attack(attackingCard, guard.instanceID) + ";"
 		attackingCard.hasAttacked = true
+		attackerTmp.remove(attackingCard)
 
 		guard.defense -= attackingCard.attack
 		attackingCard.defense -= guard.attack
