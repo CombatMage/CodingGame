@@ -1,5 +1,5 @@
-import java.util.*
 import kotlin.collections.ArrayList
+import java.util.*
 
 
 data class AttackResult(
@@ -18,7 +18,9 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 
 	while (enemySide.guards().isNotEmpty() && attackerTmp.isNotEmpty()) {
 		val guard = enemySide.guards().first()
-		val attackingCard = attackerTmp.sortedByDescending { it.attack }.first()
+		val attackingCard = attackerTmp.sortedWith(
+				compareByDescending<Card> { it.hasLethal }
+						.thenByDescending { it.attack }).first()
 
 		command += attack(attackingCard, guard.instanceID) + ";"
 		attackingCard.hasAttacked = true
@@ -27,15 +29,26 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 		guard.defense -= attackingCard.attack
 		attackingCard.defense -= guard.attack
 
-		if (guard.defense <= 0) {
+		if (guard.defense <= 0 || attackingCard.hasLethal) {
 			enemySideResult.remove(guard)
 		}
-		if (attackingCard.defense <= 0) {
+		if (attackingCard.defense <= 0 || guard.hasLethal) {
 			mySideResult.remove(attackingCard)
 		}
 	}
 
 	return AttackResult(enemySideResult, mySideResult, command)
+}
+
+fun performAttackEnemyPlayer(attacker: List<Card>, enemySide: List<Card>): String {
+	var command = ""
+	if (enemySide.guards().isEmpty()) {
+		attacker.forEach { card ->
+			command += attack(card, ENEMY_SIDE) + ";"
+			card.hasAttacked = true
+		}
+	}
+	return command
 }
 
 data class Card(
@@ -161,12 +174,7 @@ fun main(args : Array<String>) {
 			}
 
 			// attack enemy player
-			if (enemySide.guards().isEmpty()) {
-				mySide.attacker().forEach { card ->
-					command += attack(card, ENEMY_SIDE) + ";"
-					card.hasAttacked = true
-				}
-			}
+			command += performAttackEnemyPlayer(mySide.attacker(), enemySide)
 
 			// summon new creatures
 			while (mySide.size < MAX_SIDE_LIMIT && toSummon.isNotEmpty()) {
@@ -183,12 +191,7 @@ fun main(args : Array<String>) {
 			command += chargeAttackResult.command
 
 			// attack enemy player
-			if (enemySide.guards().isEmpty()) {
-				mySide.chargingAttacker().forEach { card ->
-					command += attack(card, ENEMY_SIDE) + ";"
-					card.hasAttacked = true
-				}
-			}
+			command += performAttackEnemyPlayer(mySide.chargingAttacker(), enemySide)
 
 			if (command.isBlank()) {
 				println("PASS")

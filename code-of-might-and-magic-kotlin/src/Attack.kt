@@ -14,7 +14,9 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 
 	while (enemySide.guards().isNotEmpty() && attackerTmp.isNotEmpty()) {
 		val guard = enemySide.guards().first()
-		val attackingCard = attackerTmp.sortedByDescending { it.attack }.first()
+		val attackingCard = attackerTmp.sortedWith(
+				compareByDescending<Card> { it.hasLethal }
+						.thenByDescending { it.attack }).first()
 
 		command += attack(attackingCard, guard.instanceID) + ";"
 		attackingCard.hasAttacked = true
@@ -23,10 +25,10 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 		guard.defense -= attackingCard.attack
 		attackingCard.defense -= guard.attack
 
-		if (guard.defense <= 0) {
+		if (guard.defense <= 0 || attackingCard.hasLethal) {
 			enemySideResult.remove(guard)
 		}
-		if (attackingCard.defense <= 0) {
+		if (attackingCard.defense <= 0 || guard.hasLethal) {
 			mySideResult.remove(attackingCard)
 		}
 	}
