@@ -5,9 +5,9 @@ data class Card(
 		val location: Int,
 		val cardType: Int,
 		val cost: Int,
-		val attack: Int,
+		var attack: Int,
 		var defense: Int,
-		val abilities: String,
+		var abilities: String,
 		val myHealthChange: Int,
 		val opponentHealthChange: Int,
 
@@ -28,6 +28,10 @@ data class Card(
 	val isCreatureDebuff get() = this.cardType == 2
 	val isPlayerBuff get() = this.cardType == 3 && this.myHealthChange > 0
 	val isPlayerDebuff get() = this.cardType == 3 && this.opponentHealthChange < 0
+
+	fun removeWard() {
+		this.abilities = this.abilities.replace("W", "")
+	}
 
 	companion object {
 		fun fromScanner(input: Scanner): Card {

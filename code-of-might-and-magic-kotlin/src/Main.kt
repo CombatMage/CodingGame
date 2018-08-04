@@ -31,8 +31,26 @@ fun main(args : Array<String>) {
 
 			var command = ""
 
-			val toSummon = mySelf.getCardsToPlay(myHand).creatures().toMutableList()
-			val toUse = mySelf.getCardsToPlay(myHand).items().toMutableList()
+			val cardsToPlay = mySelf.getCardsToPlay(myHand)
+			val toSummon = cardsToPlay.creatures().toMutableList()
+			val toUse = cardsToPlay.items().toMutableList()
+
+			// check items to use
+			toUse.forEach { card ->
+				if (card.isPlayerBuff || card.isPlayerDebuff) {
+					command += use(card, -1) + ";"
+				} else if (card.isCreatureBuff && mySide.isNotEmpty()) {
+					val toBuff = mySide[0]
+					command += use(card, toBuff.instanceID) + ";"
+					toBuff.attack += card.attack
+					toBuff.defense += card.defense
+				} else if (card.isCreatureDebuff && enemySide.isNotEmpty()) {
+					val toDebuff = enemySide.sortedBy { it.hasGuard }.first()
+					command += use(card, toDebuff.instanceID) + ";"
+					toDebuff.attack += card.attack
+					toDebuff.defense += card.defense
+				}
+			}
 
 			// first attack phase, try to kill guards
 			val attackResult = performAttack(mySide.attacker(), mySide, enemySide)

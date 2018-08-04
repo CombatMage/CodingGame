@@ -22,14 +22,23 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 		attackingCard.hasAttacked = true
 		attackerTmp.remove(attackingCard)
 
-		guard.defense -= attackingCard.attack
-		attackingCard.defense -= guard.attack
-
-		if (guard.defense <= 0 || attackingCard.hasLethal) {
+		if (!guard.hasWard) {
+			guard.defense -= attackingCard.attack
+		}
+		if (!attackingCard.hasWard) {
+			attackingCard.defense -= guard.attack
+		}
+		if (!guard.hasWard && (guard.defense <= 0 || attackingCard.hasLethal)) {
 			enemySideResult.remove(guard)
 		}
-		if (attackingCard.defense <= 0 || guard.hasLethal) {
+		if (!attackingCard.hasWard && (attackingCard.defense <= 0 || guard.hasLethal)) {
 			mySideResult.remove(attackingCard)
+		}
+		if (guard.hasWard) {
+			guard.removeWard()
+		}
+		if (attackingCard.hasWard) {
+			attackingCard.removeWard()
 		}
 	}
 

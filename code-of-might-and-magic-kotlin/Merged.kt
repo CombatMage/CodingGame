@@ -26,14 +26,23 @@ fun performAttack(attacker: List<Card>, mySide: List<Card>, enemySide: List<Card
 		attackingCard.hasAttacked = true
 		attackerTmp.remove(attackingCard)
 
-		guard.defense -= attackingCard.attack
-		attackingCard.defense -= guard.attack
-
-		if (guard.defense <= 0 || attackingCard.hasLethal) {
+		if (!guard.hasWard) {
+			guard.defense -= attackingCard.attack
+		}
+		if (!attackingCard.hasWard) {
+			attackingCard.defense -= guard.attack
+		}
+		if (!guard.hasWard && (guard.defense <= 0 || attackingCard.hasLethal)) {
 			enemySideResult.remove(guard)
 		}
-		if (attackingCard.defense <= 0 || guard.hasLethal) {
+		if (!attackingCard.hasWard && (attackingCard.defense <= 0 || guard.hasLethal)) {
 			mySideResult.remove(attackingCard)
+		}
+		if (guard.hasWard) {
+			guard.removeWard()
+		}
+		if (attackingCard.hasWard) {
+			attackingCard.removeWard()
 		}
 	}
 
@@ -56,9 +65,11 @@ data class Card(
 		val location: Int,
 		val cardType: Int,
 		val cost: Int,
-		val attack: Int,
+		var attack: Int,
 		var defense: Int,
-		val abilities: String,
+		var abilities: String,
+		val myHealthChange: Int,
+		val opponentHealthChange: Int,
 
 		var hasAttacked: Boolean
 ) {
@@ -71,6 +82,16 @@ data class Card(
 	val hasLethal: Boolean get() = this.abilities.contains("L")
 	val hasDrain: Boolean get() = this.abilities.contains("D")
 	val hasWard: Boolean get() = this.abilities.contains("W")
+
+	val isItem: Boolean get() = this.cardType != 0
+	val isCreatureBuff get() = this.cardType == 1
+	val isCreatureDebuff get() = this.cardType == 2
+	val isPlayerBuff get() = this.cardType == 3 && this.myHealthChange > 0
+	val isPlayerDebuff get() = this.cardType == 3 && this.opponentHealthChange < 0
+
+	fun removeWard() {
+		this.abilities = this.abilities.replace("W", "")
+	}
 
 	companion object {
 		fun fromScanner(input: Scanner): Card {
@@ -85,7 +106,7 @@ data class Card(
 			val myHealthChange = input.nextInt()
 			val opponentHealthChange = input.nextInt()
 			val cardDraw = input.nextInt()
-			return Card(instanceId, location, cardType, cost, attack, defense, abilities, false)
+			return Card(instanceId, location, cardType, cost, attack, defense, abilities, myHealthChange, opponentHealthChange, false)
 		}
 	}
 
@@ -118,14 +139,16 @@ class Deck{
 
 	fun selectCardToAdd(cards: List<Card>): Int{
 		if (cards.isEmpty()) throw IllegalArgumentException("given card list is empty")
-		cards.sortedBy { it.isCreature }.forEachIndexed { index, card ->
+
+		val cardsTmp = cards.toMutableList().sortedBy { it.cost }
+		cardsTmp.forEach { card ->
 			if (this.manaCurve.getOrDefault(card.cost, 0) < TARGET_MANA_CURVE.getOrDefault(card.cost, 0)) {
 				this.addCard(card)
-				return index
+				return cards.indexOf(card)
 			}
 		}
-		this.addCard(cards[0])
-		return 0
+		this.addCard(cardsTmp[0])
+		return cards.indexOf(cardsTmp[0])
 	}
 }
 
@@ -140,7 +163,7 @@ fun main(args : Array<String>) {
 		debug("Myself: $mySelf")
 		debug("Enemy: $enemy")
 
-		val opponentHand = input.nextInt()
+		input.nextInt() // opponentHand
 		val cardCount = input.nextInt()
 
 		if (round < 30) {
@@ -159,8 +182,26 @@ fun main(args : Array<String>) {
 
 			var command = ""
 
-			val toSummon = mySelf.getCardsToSummon(myHand).creatures().toMutableList()
-			val toUse = mySelf.getCardsToSummon(myHand).items().toMutableList()
+			val cardsToPlay = mySelf.getCardsToPlay(myHand)
+			val toSummon = cardsToPlay.creatures().toMutableList()
+			val toUse = cardsToPlay.items().toMutableList()
+
+			// check items to use
+			toUse.forEach { card ->
+				if (card.isPlayerBuff || card.isPlayerDebuff) {
+					command += use(card, -1) + ";"
+				} else if (card.isCreatureBuff && mySide.isNotEmpty()) {
+					val toBuff = mySide[0]
+					command += use(card, toBuff.instanceID) + ";"
+					toBuff.attack += card.attack
+					toBuff.defense += card.defense
+				} else if (card.isCreatureDebuff && enemySide.isNotEmpty()) {
+					val toDebuff = enemySide.sortedBy { it.hasGuard }.first()
+					command += use(card, toDebuff.instanceID) + ";"
+					toDebuff.attack += card.attack
+					toDebuff.defense += card.defense
+				}
+			}
 
 			// first attack phase, try to kill guards
 			val attackResult = performAttack(mySide.attacker(), mySide, enemySide)
@@ -203,11 +244,11 @@ fun main(args : Array<String>) {
 }
 
 fun List<Card>.attacker(): List<Card> {
-	return this.filter { it.isCreature && !it.hasAttacked }
+	return this.filter { it.isCreature && !it.hasAttacked && it.attack > 0 }
 }
 
 fun List<Card>.chargingAttacker(): List<Card> {
-	return this.filter { it.isCreature && !it.hasAttacked && it.hasCharge }
+	return this.filter { it.isCreature && !it.hasAttacked && it.hasCharge && it.attack > 0 }
 }
 
 fun List<Card>.guards(): List<Card> {
@@ -228,18 +269,18 @@ data class Player (
 		val playerDeck: Int,
 		val playerRune: Int
 ) {
-	fun getCardsToSummon(cardsInHand: List<Card>): List<Card> {
-		val toSummon = ArrayList<Card>()
+	fun getCardsToPlay(cardsInHand: List<Card>): List<Card> {
+		val toPlay = ArrayList<Card>()
 		val cards = cardsInHand.toMutableList()
 
 		var enoughMana = cards.filter { it.cost <= this.mana }
 		while (enoughMana.isNotEmpty()) {
-			toSummon.add(enoughMana[0])
+			toPlay.add(enoughMana[0])
 			this.mana -= enoughMana[0].cost
 			cards.remove(enoughMana[0])
 			enoughMana = cards.filter { it.cost <= this.mana }
 		}
-		return toSummon
+		return toPlay
 	}
 
 	companion object {
@@ -266,4 +307,8 @@ fun attack(card: Card, target: Int): String {
 
 fun summon(card: Card): String {
 	return "SUMMON ${card.instanceID}"
+}
+
+fun use(card: Card, target: Int): String {
+	return "USE ${card.instanceID} $target"
 }
