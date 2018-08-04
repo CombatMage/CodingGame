@@ -75,11 +75,11 @@ fun main(args : Array<String>) {
 }
 
 fun List<Card>.attacker(): List<Card> {
-	return this.filter { it.isCreature && !it.hasAttacked }
+	return this.filter { it.isCreature && !it.hasAttacked && it.attack > 0 }
 }
 
 fun List<Card>.chargingAttacker(): List<Card> {
-	return this.filter { it.isCreature && !it.hasAttacked && it.hasCharge }
+	return this.filter { it.isCreature && !it.hasAttacked && it.hasCharge && it.attack > 0 }
 }
 
 fun List<Card>.guards(): List<Card> {
