@@ -14,9 +14,12 @@ data class Card(
 
 	val isCreature: Boolean get() = this.cardType == 0
 
-	val hasGuard: Boolean get() = this.abilities.contains("G", true)
-	val hasCharge: Boolean get() = this.abilities.contains("C", true)
-	val hasBreakthrough: Boolean get() = this.abilities.contains("B", true)
+	val hasGuard: Boolean get() = this.abilities.contains("G")
+	val hasCharge: Boolean get() = this.abilities.contains("C")
+	val hasBreakthrough: Boolean get() = this.abilities.contains("B")
+	val hasLethal: Boolean get() = this.abilities.contains("L")
+	val hasDrain: Boolean get() = this.abilities.contains("D")
+	val hasWard: Boolean get() = this.abilities.contains("W")
 
 	companion object {
 		fun fromScanner(input: Scanner): Card {

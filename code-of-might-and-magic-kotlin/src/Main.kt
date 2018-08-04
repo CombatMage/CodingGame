@@ -26,8 +26,8 @@ fun main(args : Array<String>) {
 			val cardsInPlay = ArrayList<Card>()
 			for (i in 0 until cardCount) { cardsInPlay.add(Card.fromScanner(input)) }
 			val myHand = cardsInPlay.filter { it.location ==  MY_HAND }.toMutableList()
-			val mySide = cardsInPlay.filter { it.location == MY_SIDE }.toMutableList()
-			val enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }.toMutableList()
+			var mySide = cardsInPlay.filter { it.location == MY_SIDE }.toMutableList()
+			var enemySide = cardsInPlay.filter { it.location == ENEMY_SIDE }
 
 			var command = ""
 
@@ -35,23 +35,10 @@ fun main(args : Array<String>) {
 			val toUse = mySelf.getCardsToSummon(myHand).items().toMutableList()
 
 			// first attack phase, try to kill guards
-			while (enemySide.guards().isNotEmpty() && mySide.attacker().isNotEmpty()) {
-				val guard = enemySide.guards().first()
-				val attacker = mySide.attacker().sortedBy { it.attack }.first()
-
-				command += attack(attacker, guard.instanceID) + ";"
-				attacker.hasAttacked = true
-
-				guard.defense -= attacker.attack
-				attacker.defense -= guard.attack
-
-				if (guard.defense <= 0) {
-					enemySide.remove(guard)
-				}
-				if (attacker.defense <= 0) {
-					mySide.remove(attacker)
-				}
-			}
+			val attackResult = performAttack(mySide.attacker(), mySide, enemySide)
+			mySide = attackResult.mySide.toMutableList()
+			enemySide = attackResult.enemySide
+			command += attackResult.command
 
 			// make room for new cards to summon
 			if (mySide.size + toSummon.size > MAX_SIDE_LIMIT) {
@@ -75,23 +62,12 @@ fun main(args : Array<String>) {
 			}
 
 			// attack again with chargers
-			while (enemySide.guards().isNotEmpty() && mySide.chargingAttacker().isNotEmpty()) {
-				val guard = enemySide.guards().first()
-				val attacker = mySide.chargingAttacker().sortedBy { it.attack }.first()
+			val chargeAttackResult = performAttack(mySide.chargingAttacker(), mySide, enemySide)
+			mySide = chargeAttackResult.mySide.toMutableList()
+			enemySide = chargeAttackResult.enemySide
+			command += chargeAttackResult.command
 
-				command += attack(attacker, guard.instanceID) + ";"
-				attacker.hasAttacked = true
-
-				guard.defense -= attacker.attack
-				attacker.defense -= guard.attack
-
-				if (guard.defense <= 0) {
-					enemySide.remove(guard)
-				}
-				if (attacker.defense <= 0) {
-					mySide.remove(attacker)
-				}
-			}
+			// attack enemy player
 			if (enemySide.guards().isEmpty()) {
 				mySide.chargingAttacker().forEach { card ->
 					command += attack(card, ENEMY_SIDE) + ";"
